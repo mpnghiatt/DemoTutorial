@@ -31,21 +31,17 @@ $tiers       = $info['tiers'];
 $nextTiers   = $info['next_tiers'] ?: null;
 $moduleName  = $info['module_name'];
 
-$pageUrl = $block->getRequest()->getRequestUri();
-$isLogin = $helperData->isCustomerLoggedIn();
+/* @var \Mageplaza\DemoTutorial\Block\Tutorial\ShowSteps $block */
+
+$pageUrl         = $block->getRequest()->getRequestUri();
+$isLogin         = $helperData->isCustomerLoggedIn();
 $stepsUnregister = $block->getSteps(0, 'frontend');
-$stepsRegister = $block->getSteps(1, 'frontend');
-$exData = $helperData->getContentJson();
+$stepsRegister   = $block->getSteps(1, 'frontend');
+$exData          = $helperData->getContentJson();
 
 $hasUnregistered = !empty($stepsUnregister);
 $hasRegistered = !empty($stepsRegister);
-if (str_contains($exData['name'], 'Ultimate')) {
-    $tiers = 'Ultimate';
-} elseif (str_contains($exData['name'], 'Pro')) {
-    $tiers = 'Pro';
-} else {
-    $tiers = 'Standard';
-}
+
 $moduleName = trim(
     preg_replace('/\s+(Ultimate|Pro)$/i', '', $exData['name'])
 );
@@ -58,18 +54,15 @@ $moduleName = trim(
         <!-- FIRST BOX -->
         <div id="tutorial-first-box" class="tutorial-box" style="display:none;">
             <span class="welcome-title">
-                <?= /* @noEscape */ __('Welcome to') ?>
+                <?= /* @noEscape */ __('Welcome to the Frontend Demo of') ?>
                 <br>
-                <?= /* @noEscape */ __('the Mageplaza') ?>
-                <a href="<?= /* @noEscape */
-                $exData['live_url'] ?>"><?= /* @noEscape */
-                    $moduleName ?></a>
-                <?= /* @noEscape */
-                __(' front-end demo.') ?>
+                <a href="<?= /* @noEscape */ $exData['live_url'] ?>">
+                    <?= /* @noEscape */ __('Mageplaza ') . $moduleName . ' (' . $tiers . ')' ?>
+                </a>
             </span>
             <p class="welcome-content mp-center">
                 <?= /* @noEscape */
-                __('See how your customers interact with the search feature on your store') ?>
+                __('Discover how your SEO-friendly settings look on your website.') ?>
             </p>
 
             <?php if ($hasRegistered && $hasUnregistered): ?>
@@ -96,25 +89,20 @@ $moduleName = trim(
         <!-- END BOX -->
         <div id="tutorial-end-box" class="tutorial-box" style="display:none;min-width: 60%">
             <span class="welcome-title">
-                <?= /* @noEscape */ __('That\'s the end of') ?>
+                <?= /* @noEscape */ __('That\'s the end of the Frontend Demo of') ?>
                 <br>
-                <?= /* @noEscape */ __(' Frontend Demo of Mageplaza') ?>
-                <a href="<?= /* @noEscape */
-                $exData['live_url'] ?>"><?= /* @noEscape */
-                    $moduleName ?><?= /* @noEscape */
-                    __(' extension') ?></a>
+                <a href="<?= /* @noEscape */ $exData['live_url'] ?>">
+                    <?= /* @noEscape */ __('Mageplaza ') . $moduleName . __(' [' . $tiers . '].' ) ?>
+                </a>
             </span>
-            <p class="welcome-content">
-                <?= /* @noEscape */
-                __('For more details on how everything works behind the scenes, check out the ') ?>
-                <a href="<?= /* @noEscape */ $backend ?>"><?= /* @noEscape */
-                    __('Backend Demo') ?></a>
-                <?= /* @noEscape */
-                __('. And if anything’s unclear, just ') ?>
-                <a href="https://www.mageplaza.com/support/"><?= /* @noEscape */
-                    __('Contact us') ?></a>
-                <?= /* @noEscape */ __('! We’re here to help.') ?>
-            </p>
+            <div class="welcome-content">
+                <ul>
+                    <li> <?= /* @noEscape */ __('For a closer look at setup and tracking, explore the Backend Demo. ') ?> </li>
+                    <li style="margin: 0 84px"><?= /* @noEscape */ __('Do you have any questions? ') ?>
+                        <a href="<?= /* @noEscape */ $contactUrl ?>"> <?= /* @noEscape */ __('Contact us.') ?> </a>
+                    </li>
+                </ul>
+            </div>
             <div class="tutorial-toolbar">
                 <button class="skip-tutorial">Done</button>
                 <button id="prev-last-step">Back</button>
@@ -163,6 +151,9 @@ $moduleName = trim(
                 }
 
                 function tooltipPos(offset, position, $tooltip, $target) {
+                    const currentOffset = $target.offset();
+                    if (!currentOffset) return;
+
                     switch (position) {
                         case 'top':
                             $tooltip.css({top: offset.top - $tooltip.outerHeight() - 30, left: offset.left});
@@ -175,17 +166,29 @@ $moduleName = trim(
                             break;
                         case 'left':
                             $tooltip.css({
-                                top: offset.top + $target.outerHeight() / 2 - $tooltip.outerHeight() / 2,
-                                left: offset.left - $tooltip.outerWidth() - 30
+                                top: offset.top,
+                                left: offset.left - $tooltip.outerWidth() - 10
                             });
                             break;
+                        case 'bottom':
                         default:
-                            $tooltip.css({top: offset.top + $target.outerHeight() + 30, left: offset.left});
+                            $tooltip.css({
+                                top: offset.top + $target.outerHeight() + 1800,
+                                left: offset.left,
+                                position: 'absolute'
+                            });
+                            break;
                     }
                 }
 
                 function renderTooltip(step, index) {
-                    const $t = $('<div class="tutorial-tooltip"></div>');
+                    let $t = '';
+                    if ( step.position === 'left') {
+                        $t = $('<div class="tutorial-tooltip-left"></div>');
+                    } else {
+                        $t = $('<div class="tutorial-tooltip"></div>');
+                    }
+
                     $t.html(`<div class="content-title">${step.title}</div>
                              <div class="step-content">${step.content}</div>
                              <div class="tutorial-toolbar">
@@ -245,10 +248,13 @@ $moduleName = trim(
 
                     $('.tutorial-highlight').removeClass('tutorial-highlight');
                     $('.tutorial-tooltip').remove();
+                    $('.tutorial-tooltip-left').remove();
                     const $target = $(stp.element);
                     if ($target.length) {
                         $target.addClass('tutorial-highlight');
                         $('html,body').animate({scrollTop: $target.offset().top - 150}, 500);
+                    } else {
+                        $('<style>.tutorial-tooltip::before { display: none !important; content: none !important; }</style>').appendTo('head');
                     }
 
                     if ($target.find('.tutorial-overlay')) {
@@ -286,6 +292,7 @@ $moduleName = trim(
                             e.preventDefault();
                         } else {
                             $('.tutorial-tooltip').remove();
+                            $('.tutorial-tooltip-left').remove();
                             $('.tutorial-highlight').removeClass('tutorial-highlight');
                             $('#tutorial-end-box').fadeIn();
                             $('#tutorial-overlay').insertAfter('div#popup-container');
@@ -449,9 +456,17 @@ $moduleName = trim(
             font-weight: 600;
             margin-bottom: 10px;
         }
+        .welcome-title a {
+            color: #0249D2;
+        }
 
+        .welcome-content ul li {
+            list-style-type: disc;
+        }
         .welcome-content {
-            padding: 25px 0;
+            display: grid;
+            justify-content: center;
+            text-align: center;
         }
 
         .mp-center {
@@ -474,7 +489,7 @@ $moduleName = trim(
 
         .single-flow-toolbar {
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             gap: 15px;
         }
 
@@ -498,6 +513,17 @@ $moduleName = trim(
             box-shadow: 0 4px 15px rgba(0, 0, 0, .3);
             max-width: 600px;
         }
+        .tutorial-tooltip-left {
+            font-family: 'Outfit';
+            background: #fff;
+            color: #000;
+            position: absolute;
+            z-index: 1003;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, .3);
+            max-width: 220px;
+        }
 
         .tutorial-tooltip:before {
             content: '';
@@ -505,6 +531,18 @@ $moduleName = trim(
             border: 15px solid transparent;
             left: 20%;
             border-right-color: #fff;
+        }
+        .tutorial-tooltip-left:before {
+            content: '';
+            position: absolute;
+            border: 15px solid transparent;
+            left: 20%;
+            border-right-color: #fff;
+        }
+        .tutorial-tooltip-left.left:before {
+            transform: rotate(180deg);
+            top: 40%;
+            left: 99%;
         }
 
         .tutorial-tooltip.bottom:before {
@@ -530,6 +568,10 @@ $moduleName = trim(
 
         #step-counter {
             color: #1E2022;
+        }
+        .step-content {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
     </style>
 <?php endif; ?>

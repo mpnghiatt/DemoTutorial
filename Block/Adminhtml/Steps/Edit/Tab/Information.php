@@ -93,7 +93,7 @@ class Information extends Generic implements TabInterface
             'name'     => 'element',
             'label'    => __('Element Selector'),
             'title'    => __('Element Selector'),
-            'required' => true,
+            'required' => false,
         ]);
 
         $fieldset->addField('content', 'editor', [

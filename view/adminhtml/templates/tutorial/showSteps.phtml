@@ -60,25 +60,27 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
 
         <div id="tutorial-end-box" class="tutorial-box" style="display: none;font-family: 'Outfit';">
             <span class="welcome-title">
-                <?= /* @noEscape */ __('That\'s the end of the backend demo of ') ?>
+                <?= /* @noEscape */ __('That concludes the Backend Demo of the ') ?>
+                <br>
                 <a href="<?= /* @noEscape */ $exData['live_url'] ?>">
-                    <?= /* @noEscape */ $moduleName?>
-                    <br>
-                </a>
-                <a href="<?= /* @noEscape */ $exData['live_url'] ?>">
-                    <?= /* @noEscape */ __(' Extension [') ?>
-                    <?= /* @noEscape */ __($tiers) ?>
-                    <?= /* @noEscape */ __(']') ?>
+                    <?= /* @noEscape */ $moduleName . __(' Extension [' . __($tiers) . __(']'))?>
                 </a>
             </span>
             <div class="welcome-content">
                 <ul>
                     <li> <?= /* @noEscape */ __('Explore our detailed tutorials in the') ?>
-                        <a href="<?= /* @noEscape */ $guideUrl ?>"> <?= /* @noEscape */ __('User Guide') ?> </a>
-                        <?= /* @noEscape */ __(', or contact us if you have any questions') ?></li>
-                    <li style="margin: 0 40px"><?= /* @noEscape */ __('If you wonder how different the Professional version is, click') ?>
+                        <a href="<?= /* @noEscape */ $guideUrl ?>"><?= /* @noEscape */ __('User Guide') ?> </a>
+                        <?= /* @noEscape */ __(', or ') ?>
+                        <a href="<?= /* @noEscape */ $contactUrl ?>"><?= /* @noEscape */ __('contact us') ?></a>
+                        <?= /* @noEscape */ __('if you have any questions') ?>
+                    </li>
+                    <li><?= /* @noEscape */ __('If you wonder how different the Professional version is, click') ?>
                         <a href="<?= /* @noEscape */ $nextVersion ?>"> <?= /* @noEscape */ __('here') ?> </a>
                         <?= /* @noEscape */ __('to start!') ?>
+                    </li>
+                    <li><?= /* @noEscape */ __('If you want to see how it looks like in the frontend, click') ?>
+                        <a href="<?= /* @noEscape */ $backend ?>"> <?= /* @noEscape */ __('here') ?> </a>
+                        <?= /* @noEscape */ __('to explore.') ?>
                     </li>
                 </ul>
             </div>
@@ -95,11 +97,11 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                 setTimeout(function () {
                     let steps = <?php echo json_encode(array_values(array_map(function ($step) {
                         return [
-                            'title' => $step['module_name'],
-                            'content' => $step['content'],
-                            'element' => $step['element'],
-                            'url' => $step['page'],
-                            'trigger' => $step['trigger'],
+                            'title'    => $step['module_name'],
+                            'content'  => $step['content'],
+                            'element'  => $step['element'],
+                            'url'      => $step['page'],
+                            'trigger'  => $step['trigger'],
                             'position' => $step['notice_position'] ?? 'bottom'
                         ];
                     }, $steps))); ?>;
@@ -117,14 +119,16 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         $('#tutorial-overlay, #popup-container, #tutorial-first-box').fadeIn();
                     }
 
-                    function handleTrigger(step) {
+                    function handleTrigger (step) {
                         const $element = $(step.element);
                         const isExpanded = $element.hasClass('section-config') || $element.hasClass('active') || $element.hasClass('_show');
 
-                        if (step.trigger && step.trigger !== 'none') {
+                        if (step.trigger && step.trigger !== 'none'
+                            && ($element.hasClass('section-config') || $element.is('tr'))
+                            && !($element.find('.section-config.active').length || $element.hasClass('active'))) {
                             const $trigger = $(step.trigger);
 
-                            if (!isExpanded) {
+                            if (!isExpanded || !isTriggered) {
                                 if ($trigger.length) {
                                     const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
                                     Fieldset.toggleCollapse($trigger.get(0), baseUrl);
@@ -134,6 +138,11 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                                         Fieldset.toggleCollapse($resolvedTrigger.get(0), baseUrl);
                                     });
                                 }
+                            }
+                        } else if (step.trigger && step.trigger !== 'none') {
+                            let target = $(step.trigger);
+                            if (target.length && !$element.hasClass('_show')) {
+                                target.trigger('click');
                             }
                         }
                     }
@@ -290,10 +299,15 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
 
 
                         $('#prev-step').click(() => {
+                            handleTrigger(step);
+
                             if (currentStep > 0) {
                                 currentStep--;
                                 localStorage.setItem('tutorialStep', currentStep);
                                 showStep(currentStep);
+                                if (currentStep === 17) {
+                                    scrollToTop();
+                                }
                             }
                         });
 
@@ -474,9 +488,8 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
             list-style-type: disc;
         }
         .welcome-content {
-            display: grid;
-            justify-content: center;
-            text-align: center;
+            margin-left: 20px;
+            padding: 20px;
         }
         .mp-center {
             text-align: center;
