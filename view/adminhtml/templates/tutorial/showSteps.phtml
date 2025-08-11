@@ -63,7 +63,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                 <?= /* @noEscape */ __('That concludes the Backend Demo of the ') ?>
                 <br>
                 <a href="<?= /* @noEscape */ $exData['live_url'] ?>">
-                    <?= /* @noEscape */ $moduleName . __(' Extension [' . __($tiers) . __(']'))?>
+                    <?= /* @noEscape */ $moduleName . __(' Extension (' . __($tiers) . __(' version)'))?>
                 </a>
             </span>
             <div class="welcome-content">
@@ -73,10 +73,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         <?= /* @noEscape */ __(', or ') ?>
                         <a href="<?= /* @noEscape */ $contactUrl ?>"><?= /* @noEscape */ __('contact us') ?></a>
                         <?= /* @noEscape */ __('if you have any questions') ?>
-                    </li>
-                    <li><?= /* @noEscape */ __('If you wonder how different the Professional version is, click') ?>
-                        <a href="<?= /* @noEscape */ $nextVersion ?>"> <?= /* @noEscape */ __('here') ?> </a>
-                        <?= /* @noEscape */ __('to start!') ?>
                     </li>
                     <li><?= /* @noEscape */ __('If you want to see how it looks like in the frontend, click') ?>
                         <a href="<?= /* @noEscape */ $backend ?>"> <?= /* @noEscape */ __('here') ?> </a>
