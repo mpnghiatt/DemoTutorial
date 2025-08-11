@@ -112,6 +112,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         $('#popup-container, #tutorial-overlay').fadeOut();
                         $('.tutorial-highlight').removeClass('tutorial-highlight');
                         $('.tutorial-tooltip').remove();
+                        $('.tutorial-tooltip-left').remove();
                     }
 
                     function showFirstPopup() {
@@ -168,8 +169,8 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                                 break;
                             case 'left':
                                 $tooltip.css({
-                                    top: offset.top + $target.outerHeight() / 2 - $tooltip.outerHeight() / 2,
-                                    left: offset.left - $target.outerWidth() / 2 - $tooltip.outerWidth() / 2 - 233,
+                                    top: offset.top - 70,
+                                    left: offset.left - $tooltip.outerWidth() - 25,
                                     position: 'absolute'
                                 });
                                 break;
@@ -239,6 +240,12 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         $('html, body').animate({ scrollTop: 0 }, duration);
                     }
 
+                    function resetPadding() {
+                        $('#row_mplazyload_general_exclude_css').append('<td class=""></td>');
+                        $('#row_mplazyload_general_exclude_page').append('<td class=""></td>');
+                        $('#row_mplazyload_general_exclude_text').append('<td class=""></td>');
+                        $('#row_mplazyload_general_icon').append('<td class=""></td>');
+                    }
                     function renderStep($target, step, index) {
                         let overlay = $target.find('#tutorial-overlay');
 
@@ -251,14 +258,21 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                             $target.wrap($wrapper);
                             $target.parent().addClass('tutorial-highlight');
                         } else {
+                            resetPadding();
                             $target.addClass('tutorial-highlight');
                         }
 
                         $('html, body').animate({
                             scrollTop: $target.offset().top - 200
                         }, 500);
+                        let $tooltip = '';
 
-                        let $tooltip = $('<div class="tutorial-tooltip"></div>');
+                        if ( step.position === 'left' && index !== 19) {
+                            $tooltip = $('<div class="tutorial-tooltip-left"></div>');
+                        } else {
+                            $tooltip = $('<div class="tutorial-tooltip"></div>');
+                        }
+
                         $tooltip.html(`
                             <div class="content-title">${step.title}</div>
                             <div class="step-content">${step.content}</div>
@@ -287,11 +301,12 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                                 currentStep++;
                                 localStorage.setItem('tutorialStep', currentStep);
                                 showStep(currentStep);
-                                if (currentStep === 17) {
+                                if (currentStep === 19) {
                                     scrollToTop();
                                 }
                             } else {
                                 $('.tutorial-tooltip').remove();
+                                $('.tutorial-tooltip-left').remove();
                                 $('.tutorial-highlight').removeClass('tutorial-highlight');
                                 $('#tutorial-end-box').fadeIn();
                             }
@@ -305,7 +320,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                                 currentStep--;
                                 localStorage.setItem('tutorialStep', currentStep);
                                 showStep(currentStep);
-                                if (currentStep === 17) {
+                                if (currentStep === 19) {
                                     scrollToTop();
                                 }
                             }
@@ -329,6 +344,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
 
                             $('.tutorial-highlight').removeClass('tutorial-highlight');
                             $('.tutorial-tooltip').remove();
+                            $('.tutorial-tooltip-left').remove();
 
                             let $target = $(step.element);
 
@@ -370,13 +386,18 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     }
 
                     function updateTooltipPosition() {
-                        const $tooltip = $('.tutorial-tooltip');
-                        const $target  = $('.tutorial-highlight');
+                        const $tooltip     = $('.tutorial-tooltip');
+                        const $tooltipLeft = $('.tutorial-tooltip-left');
+                        const $target      = $('.tutorial-highlight');
 
-                        if ($tooltip.length && $target.length && $target.is(':visible')) {
+                        if ($target.length && $target.is(':visible')) {
                             const step = steps[currentStep];
                             if (step) {
-                                tooltipPositioning($target.offset(), step.position, $tooltip, $target);
+                                if ($tooltip.length) {
+                                    tooltipPositioning($target.offset(), step.position, $tooltip, $target);
+                                } else if ($tooltipLeft.length) {
+                                    tooltipPositioning($target.offset(), step.position, $tooltipLeft, $target);
+                                }
                             }
                         }
                     }
@@ -406,9 +427,13 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                             showStep(currentStep);
                         });
                     });
+                    $(document).on('contentUpdated', function () {
+                        updateTooltipPosition();
+                    });
                     $(window).on('resize', updateTooltipPosition);
                     $(window).on('scroll', updateTooltipPosition);
                 }, 0);
+
             });
         })
     </script>
@@ -548,6 +573,32 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
         }
         aside.modal-slide._inner-scroll._show{
             left: 40%;
+        }
+
+        .tutorial-tooltip-left {
+            font-family: 'Outfit';
+            background: #fff;
+            color: #000;
+            position: absolute;
+            z-index: 1003;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, .3);
+            max-width: 400px;
+        }
+
+        .tutorial-tooltip-left:before {
+            content: '';
+            position: absolute;
+            border: 15px solid transparent;
+            left: 20%;
+            border-right-color: #fff;
+        }
+
+        .tutorial-tooltip-left.left:before {
+            transform: rotate(180deg);
+            top: 40%;
+            left: 99%;
         }
     </style>
 <?php endif; ?>

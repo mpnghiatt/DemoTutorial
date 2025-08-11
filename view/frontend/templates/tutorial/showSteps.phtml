@@ -97,7 +97,9 @@ $moduleName = trim(
             </span>
             <div class="welcome-content">
                 <ul>
-                    <li> <?= /* @noEscape */ __('For a closer look at setup and tracking, explore the Backend Demo. ') ?> </li>
+                    <li> <?= /* @noEscape */ __('For a closer look at setup and tracking, explore the ') ?>
+                        <a href="<?= $backend ?>"><?= /* @noEscape */ __('Backend Demo.') ?></a>
+                    </li>
                     <li style="margin: 0 84px"><?= /* @noEscape */ __('Do you have any questions? ') ?>
                         <a href="<?= /* @noEscape */ $contactUrl ?>"> <?= /* @noEscape */ __('Contact us.') ?> </a>
                     </li>
@@ -156,7 +158,10 @@ $moduleName = trim(
 
                     switch (position) {
                         case 'top':
-                            $tooltip.css({top: offset.top - $tooltip.outerHeight() - 30, left: offset.left});
+                            $tooltip.css({
+                                top: offset.top - $tooltip.outerHeight() - 30,
+                                left: offset.left
+                            });
                             break;
                         case 'right':
                             $tooltip.css({
@@ -173,7 +178,7 @@ $moduleName = trim(
                         case 'bottom':
                         default:
                             $tooltip.css({
-                                top: offset.top + $target.outerHeight() + 1800,
+                                top: offset.top + $target.outerHeight() + 20,
                                 left: offset.left,
                                 position: 'absolute'
                             });
