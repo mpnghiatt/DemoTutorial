@@ -95,14 +95,15 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                 setTimeout(function () {
                     let steps = <?php echo json_encode(array_values(array_map(function ($step) {
                         return [
-                            'title' => $step['module_name'],
-                            'content' => $step['content'],
-                            'element' => $step['element'],
-                            'url' => $step['page'],
-                            'trigger' => $step['trigger'],
+                            'title'    => $step['module_name'],
+                            'content'  => $step['content'],
+                            'element'  => $step['element'],
+                            'url'      => $step['page'],
+                            'trigger'  => $step['trigger'],
                             'position' => $step['notice_position'] ?? 'bottom'
                         ];
-                    }, $steps))); ?>;
+                    }, $steps))); ?>
+
                     let currentStep = -1;
 
                     function closeTutorial() {
@@ -117,14 +118,14 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         $('#tutorial-overlay, #popup-container, #tutorial-first-box').fadeIn();
                     }
 
-                    function handleTrigger(step) {
+                    function handleTrigger (step) {
                         const $element = $(step.element);
                         const isExpanded = $element.hasClass('section-config') || $element.hasClass('active') || $element.hasClass('_show');
-
-                        if (step.trigger && step.trigger !== 'none') {
+                        if (step.trigger && step.trigger !== 'none'
+                            && ($element.hasClass('section-config') || $element.is('tr'))
+                            && !($element.find('.section-config.active').length || $element.hasClass('active'))) {
                             const $trigger = $(step.trigger);
-
-                            if (!isExpanded) {
+                            if (!isExpanded || !isTriggered) {
                                 if ($trigger.length) {
                                     const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
                                     Fieldset.toggleCollapse($trigger.get(0), baseUrl);
@@ -134,6 +135,11 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                                         Fieldset.toggleCollapse($resolvedTrigger.get(0), baseUrl);
                                     });
                                 }
+                            }
+                        } else if (step.trigger && step.trigger !== 'none') {
+                            let target = $(step.trigger);
+                            if (target.length && !$element.hasClass('_show')) {
+                                target.trigger('click');
                             }
                         }
                     }
@@ -195,7 +201,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         }, 1000);
                     }
 
-
                     function waitForPageStable(callback, timeout = 4000) {
                         let lastHeight  = 0;
                         let stableCount = 0;
@@ -226,6 +231,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                             }
                         }, 1000);
                     }
+
                     function scrollToTop(duration = 600) {
                         $('html, body').animate({ scrollTop: 0 }, duration);
                     }
@@ -272,6 +278,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         $tooltip.addClass(position);
 
                         tooltipPositioning(offset, position, $tooltip, $target);
+
                         $('#next-step').click(() => {
                             handleTrigger(step);
                             if (currentStep < steps.length - 1) {
@@ -299,6 +306,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
 
                         $('.skip-tutorial').click(closeTutorial);
                     }
+
                     function showStep(index) {
                         if (index >= 0 && index < steps.length) {
                             let step = steps[index];
@@ -386,12 +394,14 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         showFirstPopup();
                         $('.skip-tutorial').click(closeTutorial);
                     }
+
                     $('#prev-last-step').click(function () {
                         currentStep = steps.length - 1;
                         $('#tutorial-end-box').fadeOut(function () {
                             showStep(currentStep);
                         });
                     });
+
                     $(window).on('resize', updateTooltipPosition);
                     $(window).on('scroll', updateTooltipPosition);
                 }, 0);
@@ -463,7 +473,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
             font-weight: 600;
         }
         .welcome-title a {
-            color: #0249D2;
+            color: #01007F;
         }
         .content-title {
             font-size: 20px;
