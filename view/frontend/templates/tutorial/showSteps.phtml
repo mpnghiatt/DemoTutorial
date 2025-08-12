@@ -61,8 +61,9 @@ $moduleName = trim(
                 </a>
             </span>
             <p class="welcome-content mp-center">
-                <?= /* @noEscape */
-                __('Discover how your SEO-friendly settings look on your website.') ?>
+                <?= /* @noEscape */ __('Explore how Mageplaza’s SEO Extension enhances various parts of') ?>
+                <br>
+                <?= /* @noEscape */ __('your storefront by automatically applying SEO best practices.') ?>
             </p>
 
             <?php if ($hasRegistered && $hasUnregistered): ?>
@@ -145,6 +146,7 @@ $moduleName = trim(
                     $('#popup-container, #tutorial-overlay').fadeOut();
                     $('.tutorial-highlight').removeClass('tutorial-highlight');
                     $('.tutorial-tooltip').remove();
+                    $('.tutorial-tooltip-left').remove();
                 }
 
                 function showFirstPopup() {

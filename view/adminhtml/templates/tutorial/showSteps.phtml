@@ -119,12 +119,10 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     function handleTrigger (step) {
                         const $element = $(step.element);
                         const isExpanded = $element.hasClass('section-config') || $element.hasClass('active') || $element.hasClass('_show');
-
                         if (step.trigger && step.trigger !== 'none'
                             && ($element.hasClass('section-config') || $element.is('tr'))
                             && !($element.find('.section-config.active').length || $element.hasClass('active'))) {
                             const $trigger = $(step.trigger);
-
                             if (!isExpanded || !isTriggered) {
                                 if ($trigger.length) {
                                     const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
@@ -147,7 +145,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     function tooltipPositioning(offset, position, $tooltip, $target) {
                         const currentOffset = $target.offset();
                         if (!currentOffset) return;
-
                         switch (position) {
                             case 'top':
                                 $tooltip.css({
@@ -183,12 +180,9 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
 
                     function waitForElement(selector, callback, timeout = 4000) {
                         const start = Date.now();
-
                         $('body').trigger('processStart');
-
                         const interval = setInterval(() => {
                             const $el = $(selector);
-
                             if ($el.length) {
                                 clearInterval(interval);
                                 $('body').trigger('processStop');
@@ -201,25 +195,20 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         }, 1000);
                     }
 
-
                     function waitForPageStable(callback, timeout = 4000) {
                         let lastHeight  = 0;
                         let stableCount = 0;
                         const requiredStableCount = 10;
                         const start = Date.now();
-
                         $('body').trigger('processStart');
-
                         const checkStability = setInterval(() => {
                             const currentHeight = document.body.scrollHeight;
-
                             if (currentHeight === lastHeight) {
                                 stableCount++;
                             } else {
                                 stableCount = 0;
                                 lastHeight = currentHeight;
                             }
-
                             if (stableCount >= requiredStableCount) {
                                 clearInterval(checkStability);
                                 $('body').trigger('processStop');
@@ -232,23 +221,63 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                             }
                         }, 1000);
                     }
+
+                    function waitForGridData(callback, timeout = 3000) {
+                        const start = Date.now();
+                        $('body').trigger('processStart');
+
+                        const checkGrid = setInterval(() => {
+                            const $gridRows = $('.data-grid tbody tr');
+                            const $loader = $('.admin__data-grid-loading-mask:visible, .data-grid-loading-mask:visible');
+                            const $spinner = $('.spinner:visible, .loading-mask:visible');
+
+                            if ($loader.length === 0 && $spinner.length === 0 && $gridRows.length > 0) {
+                                setTimeout(() => {
+                                    clearInterval(checkGrid);
+                                    $('body').trigger('processStop');
+                                    callback();
+                                }, 500);
+                            } else if (Date.now() - start > timeout) {
+                                clearInterval(checkGrid);
+                                $('body').trigger('processStop');
+                                console.warn('Timeout waiting for grid data');
+                                callback();
+                            }
+                        }, 100);
+                    }
+
                     function scrollToTop(duration = 600) {
                         $('html, body').animate({ scrollTop: 0 }, duration);
                     }
 
                     function resetPadding() {
-                        $('#row_mplazyload_general_exclude_css').append('<td class=""></td>');
-                        $('#row_mplazyload_general_exclude_page').append('<td class=""></td>');
-                        $('#row_mplazyload_general_exclude_text').append('<td class=""></td>');
-                        $('#row_mplazyload_general_icon').append('<td class=""></td>');
+                        const rowIds = [
+                            '#row_mplazyload_general_exclude_css',
+                            '#row_mplazyload_general_exclude_page',
+                            '#row_mplazyload_general_exclude_text',
+                            '#row_mplazyload_general_icon',
+                            '#row_mplazyload_general_threshold',
+                            '#row_mplazyload_general_loading_type',
+                            '#row_mplazyload_general_resize_width',
+                            '#row_mplazyload_general_resize_height'
+                        ];
+
+                        rowIds.forEach(function(rowId) {
+                            const $row = $(rowId);
+                            if ($row.length) {
+                                const existingEmptyTds = $row.find('td[class="use-default"]').length;
+                                if (existingEmptyTds === 0) {
+                                    $row.append('<td class="use-default"></td>');
+                                }
+                            }
+                        });
                     }
+
                     function renderStep($target, step, index) {
                         let overlay = $target.find('#tutorial-overlay');
-
                         if (overlay.length) {
                             $target.parent().append(overlay);
                         }
-
                         if (($target.is('button') || $target.is('[type="button"]'))) {
                             const $wrapper = $('<div class="tutorial-highlight-wrapper"></div>');
                             $target.wrap($wrapper);
@@ -257,18 +286,15 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                             resetPadding();
                             $target.addClass('tutorial-highlight');
                         }
-
                         $('html, body').animate({
                             scrollTop: $target.offset().top - 200
                         }, 500);
                         let $tooltip = '';
-
                         if ( step.position === 'left' && index !== 19) {
                             $tooltip = $('<div class="tutorial-tooltip-left"></div>');
                         } else {
                             $tooltip = $('<div class="tutorial-tooltip"></div>');
                         }
-
                         $tooltip.html(`
                             <div class="content-title">${step.title}</div>
                             <div class="step-content">${step.content}</div>
@@ -281,15 +307,11 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                                 </div>
                             </div>
                         `);
-
                         $('body').append($tooltip);
-
                         // Tooltip positioning
                         let offset = $target.offset();
                         let position = step.position || 'bottom';
-
                         $tooltip.addClass(position);
-
                         tooltipPositioning(offset, position, $tooltip, $target);
                         $('#next-step').click(() => {
                             handleTrigger(step);
@@ -307,11 +329,8 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                                 $('#tutorial-end-box').fadeIn();
                             }
                         });
-
-
                         $('#prev-step').click(() => {
                             handleTrigger(step);
-
                             if (currentStep > 0) {
                                 currentStep--;
                                 localStorage.setItem('tutorialStep', currentStep);
@@ -321,56 +340,65 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                                 }
                             }
                         });
-
                         $('.skip-tutorial').click(closeTutorial);
                     }
+
                     function showStep(index) {
                         if (index >= 0 && index < steps.length) {
                             let step = steps[index];
-
                             if (window.location.pathname !== step.url) {
                                 localStorage.setItem('tutorialStep', index);
                                 window.location.href = step.url;
                                 return;
                             }
-
                             if (step.trigger) {
                                 handleTrigger(step);
                             }
-
                             $('.tutorial-highlight').removeClass('tutorial-highlight');
                             $('.tutorial-tooltip').remove();
                             $('.tutorial-tooltip-left').remove();
-
                             let $target = $(step.element);
-
                             if ($target.length) {
-                                renderStep($target, step, index);
+                                if (window.location.pathname.includes('/seo/term/') && !window.location.pathname.includes('/edit/term_id')) {
+                                    waitForGridData(function() {
+                                        renderStep($target, step, index);
+                                    });
+                                } else {
+                                    renderStep($target, step, index);
+                                }
                             } else if (!$target.length) {
                                 waitForElement(step.element, function ($target) {
-                                    waitForPageStable(function() {
-                                        if ($target.length) {
-                                            renderStep($target, step, index);
-                                        }
-                                    });
+                                    if (window.location.pathname.includes('/seo/term/') && !window.location.pathname.includes('/edit/term_id')) {
+                                        waitForGridData(function() {
+                                            waitForPageStable(function() {
+                                                if ($target.length) {
+                                                    renderStep($target, step, index);
+                                                }
+                                            });
+                                        });
+                                    } else {
+                                        waitForPageStable(function() {
+                                            if ($target.length) {
+                                                renderStep($target, step, index);
+                                            }
+                                        });
+                                    }
                                 });
                             } else {
                                 let $tooltip = $('<div class="tutorial-tooltip"></div>');
                                 $tooltip.html(`
-                                <div class="content-title">${step.title}</div>
-                                <div class="step-content">${step.content}</div>
-                                <div class="tutorial-toolbar">
-                                    <button class="skip-tutorial">Skip</button>
-                                    <span id="step-counter">${index + 1} of ${steps.length}</span>
-                                    <div>
-                                        <button id="prev-step" ${index === 0 ? 'style="display:none;"' : ''}>Back</button>
-                                        <button id="next-step" ${index === steps.length ? 'style="display:none;"' : ''}>Next</button>
-                                    </div>
-                                </div>
-                            `);
-
+                        <div class="content-title">${step.title}</div>
+                        <div class="step-content">${step.content}</div>
+                        <div class="tutorial-toolbar">
+                            <button class="skip-tutorial">Skip</button>
+                            <span id="step-counter">${index + 1} of ${steps.length}</span>
+                            <div>
+                                <button id="prev-step" ${index === 0 ? 'style="display:none;"' : ''}>Back</button>
+                                <button id="next-step" ${index === steps.length ? 'style="display:none;"' : ''}>Next</button>
+                            </div>
+                        </div>
+                    `);
                                 $('body').append($tooltip);
-
                                 // Tooltip positioning
                                 $tooltip.css({
                                     top: $(window).scrollTop() + ($(window).height() - $tooltip.outerHeight()) / 2,
@@ -385,7 +413,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         const $tooltip     = $('.tutorial-tooltip');
                         const $tooltipLeft = $('.tutorial-tooltip-left');
                         const $target      = $('.tutorial-highlight');
-
                         if ($target.length && $target.is(':visible')) {
                             const step = steps[currentStep];
                             if (step) {
@@ -407,7 +434,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         });
                     });
 
-                    // Resume if redirected
                     let savedStep = localStorage.getItem('tutorialStep');
                     if (savedStep !== null) {
                         currentStep = parseInt(savedStep);
@@ -417,15 +443,55 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         showFirstPopup();
                         $('.skip-tutorial').click(closeTutorial);
                     }
+
                     $('#prev-last-step').click(function () {
                         currentStep = steps.length - 1;
                         $('#tutorial-end-box').fadeOut(function () {
                             showStep(currentStep);
                         });
                     });
+
                     $(document).on('contentUpdated', function () {
                         updateTooltipPosition();
                     });
+
+                    $(document).on('ajaxComplete', function(event, xhr, settings) {
+                        if (window.location.pathname.includes('/seo/term/') &&
+                            !window.location.pathname.includes('/edit/term_id') &&
+                            settings.url && (settings.url.includes('mui/index/render') || settings.url.includes('listing'))) {
+                            setTimeout(updateTooltipPosition, 300);
+                        }
+                    });
+
+                    if (typeof MutationObserver !== 'undefined') {
+                        const observer = new MutationObserver(function(mutations) {
+                            if (!window.location.pathname.includes('/seo/term/') && window.location.pathname.includes('/edit/term_id')) return;
+
+                            let shouldUpdate = false;
+                            mutations.forEach(function(mutation) {
+                                if (mutation.type === 'childList') {
+                                    const $target = $(mutation.target);
+                                    if ($target.closest('.data-grid').length > 0 ||
+                                        $target.hasClass('data-grid') ||
+                                        $target.find('.data-grid').length > 0) {
+                                        shouldUpdate = true;
+                                    }
+                                }
+                            });
+                            if (shouldUpdate) {
+                                setTimeout(updateTooltipPosition, 100);
+                            }
+                        });
+
+                        const targetNode = document.querySelector('.main-content') || document.querySelector('.page-main-actions') || document.body;
+                        if (targetNode) {
+                            observer.observe(targetNode, {
+                                childList: true,
+                                subtree: true
+                            });
+                        }
+                    }
+
                     $(window).on('resize', updateTooltipPosition);
                     $(window).on('scroll', updateTooltipPosition);
                 }, 0);
