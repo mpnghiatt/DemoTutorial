@@ -75,7 +75,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         <?= /* @noEscape */ __('if you have any questions') ?>
                     </li>
                     <li><?= /* @noEscape */ __('If you want to see how it looks like in the frontend, click') ?>
-                        <a href="<?= /* @noEscape */ $backend ?>"> <?= /* @noEscape */ __('here') ?> </a>
+                        <a href="<?= /* @noEscape */ $frontend ?>"> <?= /* @noEscape */ __('here') ?> </a>
                         <?= /* @noEscape */ __('to explore.') ?>
                     </li>
                 </ul>
@@ -148,7 +148,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         switch (position) {
                             case 'top':
                                 $tooltip.css({
-                                    top: offset.top - $tooltip.outerHeight() - 30,
+                                    top: offset.top - $tooltip.outerHeight() - 15,
                                     left: offset.left,
                                     position: 'absolute'
                                 });
