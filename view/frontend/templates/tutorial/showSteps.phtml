@@ -230,7 +230,13 @@ $hasRegistered = !empty($stepsRegister);
                                 this.positionTooltip($tooltip, $target, step);
 
                                 this.bindTooltipEvents($tooltip);
-                                this.addProductToCart();
+
+                                if (this.currentStep === 2) {
+                                    const self = this;
+                                    setTimeout(function(){
+                                        self.addProductToCart();
+                                    }, 100);
+                                }
 
                                 $(this.SELECTORS.PAYPAL_BUTTON).css({'position': 'relative', 'z-index': '99'});
                             },
@@ -406,35 +412,30 @@ $hasRegistered = !empty($stepsRegister);
                             },
 
                             addProductToCart: function() {
-                                const self = this;
+                                const key = '24-WB04-Clicked';
 
-                                if (self.currentStep !== 2) return;
-                                const formKey = $('[name="form_key"]').val();
+                                if (localStorage.getItem(key) === 'true') {
+                                    console.log('Already clicked before, skipping...');
+                                    return;
+                                }
 
-                                let productData = {
-                                    product: 1348,
-                                    selected_configurable_option: '',
-                                    related_product: '',
-                                    item: 1348,
-                                    form_key: formKey,
-                                    'super_attribute[144]': 167,
-                                    'super_attribute[93]': 49,
-                                    qty: 1
-                                };
-
-                                $.ajax({
-                                    url: '/checkout/cart/add/',
-                                    type: 'POST',
-                                    data: productData,
-
-                                    success: function(response) {
-                                        console.log('Product added to cart successfully');
-                                    },
-                                    error: function() {
-                                        console.warn('Failed to add product to cart');
+                                const $form = $('form[data-role="tocart-form"][data-product-sku="24-WB04"]');
+                                if ($form.length) {
+                                    const $formKey = $form.find('input[name="form_key"]').val();
+                                    if (!$formKey) {
+                                        console.warn('No valid form_key found, skipping');
+                                        return;
                                     }
-                                });
+
+                                    const $button = $form.find('button.tocart.primary');
+                                    if ($button.length) {
+                                        $button.trigger('click');
+                                        localStorage.setItem(key, 'true');
+                                        console.log('Clicked Add to Cart for Push It Messenger Bag');
+                                    }
+                                }
                             },
+
                             observeDomChanges: function($target) {
                                 const self = this;
                                 const targetNode = document.body;
@@ -605,7 +606,7 @@ $hasRegistered = !empty($stepsRegister);
                                 var posBonus = 0;
 
                                 if (self.currentStep === 0) {
-                                    posBonus = 350;
+                                    posBonus = 550;
                                 }
 
                                 if (self.currentStep === 1) {
