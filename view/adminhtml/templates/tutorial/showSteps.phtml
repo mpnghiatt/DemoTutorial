@@ -87,7 +87,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
         </div>
     </div>
     <script type="text/javascript">
-        require(['jquery', 'openSelect'], function ($) {
+        require(['jquery'], function ($) {
             $(window).on('load', function () {
                 if (localStorage.getItem('tutorialSkipped') === 'true') return;
                 setTimeout(function () {
@@ -100,12 +100,10 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                             'trigger'  => $step['trigger'],
                             'position' => $step['notice_position'] ?? 'bottom'
                         ];
-                    }, $steps))); ?>
+                    }, $steps))); ?>;
+                    let currentStep = -1;
 
-                        let
-                    currentStep = -1;
-
-                    function closeTutorial () {
+                    function closeTutorial() {
                         localStorage.setItem('tutorialSkipped', 'true');
                         $('#popup-container, #tutorial-overlay').fadeOut();
                         $('.tutorial-highlight').removeClass('tutorial-highlight');
@@ -118,11 +116,36 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         $('#tutorial-overlay, #popup-container, #tutorial-first-box').fadeIn();
                     }
 
-                    function tooltipPositioning (offset, position, $tooltip, $target) {
+                    function handleTrigger (step) {
+                        const $element = $(step.element);
+                        const isExpanded = $element.hasClass('section-config') || $element.hasClass('active') || $element.hasClass('_show');
+                        if (step.trigger && step.trigger !== 'none'
+                            && ($element.hasClass('section-config') || $element.is('tr'))
+                            && !($element.find('.section-config.active').length || $element.hasClass('active'))) {
+                            const $trigger = $(step.trigger);
+                            if (!isExpanded || !isTriggered) {
+                                if ($trigger.length) {
+                                    const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
+                                    Fieldset.toggleCollapse($trigger.get(0), baseUrl);
+                                } else {
+                                    waitForElement(step.trigger, function ($resolvedTrigger) {
+                                        const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
+                                        Fieldset.toggleCollapse($resolvedTrigger.get(0), baseUrl);
+                                    });
+                                }
+                            }
+                        } else if (step.trigger && step.trigger !== 'none') {
+                            let target = $(step.trigger);
+                            if (target.length && !$element.hasClass('_show')) {
+                                target.trigger('click');
+                            }
+                        }
+                    }
+
+                    function tooltipPositioning(offset, position, $tooltip, $target) {
                         const currentOffset = $target.offset();
                         if (!currentOffset) return;
-
-                        switch (position){
+                        switch (position) {
                             case 'top':
                                 $tooltip.css({
                                     top: offset.top - $tooltip.outerHeight() - 15,
@@ -139,12 +162,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                                 break;
                             case 'left':
                                 posBonus = 0;
-                                if(currentStep === 13) {
-                                    posBonus = -300;
-                                }
-                                if(currentStep === 14) {
-                                    posBonus = 130;
-                                }
+
                                 $tooltip.css({
                                     top: offset.top + $target.outerHeight() / 2 - $tooltip.outerHeight() / 2,
                                     left: offset.left - 10 - $target.outerWidth() / 2 - $tooltip.outerWidth() / 2 - posBonus,
@@ -153,10 +171,8 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                                 break;
                             case 'bottom':
                             default:
-                                var posBonus = 0;
-                                if (currentStep === 3) {
-                                    posBonus = 120;
-                                }
+                                posBonus = 0;
+
                                 $tooltip.css({
                                     top: offset.top + $target.outerHeight() + 30 + posBonus,
                                     left: offset.left,
@@ -229,54 +245,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         return window.location.pathname.includes(path)
                     }
 
-                    function handleTrigger (step) {
-                        const $element = $(step.element);
-                        const isExpanded = $element.hasClass('section-config') || $element.hasClass('active') || $element.hasClass('_show');
-                        if (step.trigger && step.trigger !== 'none'
-                            && ($element.hasClass('section-config') || $element.is('tr'))
-                            && !($element.find('.section-config.active').length || $element.hasClass('active'))) {
-                            const $trigger = $(step.trigger);
-                            if (!isExpanded) {
-                                if ($trigger.length) {
-                                    const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
-                                    Fieldset.toggleCollapse($trigger.get(0), baseUrl);
-                                } else {
-                                    waitForElement(step.trigger, function ($resolvedTrigger) {
-                                        const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
-                                        Fieldset.toggleCollapse($resolvedTrigger.get(0), baseUrl);
-                                    });
-                                }
-                            }
-                        } else if (step.trigger && step.trigger !== 'none') {
-                            let triggers = step.trigger.split(',').map(s => s.trim());
-                            triggers.forEach(sel => {
-                                let target = $(sel);
-                                const isHide = target.hasClass('hide-details');
-
-                                if (target.length && !$element.hasClass('_show') || !isHide) {
-                                    if (sel === 'select#block_config_rule_sort_order_direction' ||
-                                        sel === 'select#block_config_rule_location') {
-
-                                        target.select2({
-                                            minimumResultsForSearch: Infinity,
-                                            templateResult: function (data) {
-                                                if (!data.id) {
-                                                    return data.text;
-                                                }
-                                                return data.text;
-                                            }
-                                        });
-                                        target.select2('open');
-
-                                    } else {
-                                        target.trigger('click');
-                                    }
-                                }
-                            });
-
-                        }
-                    }
-
                     function renderStep($target, step, index) {
                         let overlay = $target.find('#tutorial-overlay');
 
@@ -291,15 +259,9 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         } else {
                             $target.addClass('tutorial-highlight');
 
-                            if ([7, 9, 10, 20, 21].includes(currentStep)) {
-                                $target.addClass('tutorial-highlight-box-shadow');
-                            }
                         }
-                        if (currentStep === 9) {
-                            scrollToElement($target, 400);
-                        } else {
-                            scrollToElement($target, 230);
-                        }
+
+                        scrollToElement($target, 230);
 
                         let $tooltip = '';
                         if ( step.position === 'left') {
@@ -336,22 +298,10 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         }).remove();
                     }
 
-                    function runTriggers(step) {
-                        let triggers = steps[currentStep].trigger.split(',').map(s => s.trim());
-                        triggers.forEach(sel => {
-                            if (
-                                sel !== 'select#block_config_rule_sort_order_direction' &&
-                                sel !== 'select#block_config_rule_location'
-                            ) {
-                                handleTrigger({ trigger: sel });
-                            }
-                        });
-                    }
-
                     function action(step) {
                         $('#next-step').click(() => {
                             if (step.trigger) {
-                                runTriggers(step);
+                                handleTrigger(step);
                             }
 
                             if (currentStep < steps.length - 1) {
@@ -368,7 +318,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
 
                         $('#prev-step').click(() => {
                             if (step.trigger) {
-                                runTriggers(step);
+                                handleTrigger(step);
                             }
                             if (currentStep > 0) {
                                 currentStep--;
@@ -401,7 +351,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
 
                             if ($target.length) {
                                 renderStep($target, step, index);
-                            } else if (!$target.length && !findUrlPath('/mparp/rule/edit/id') && !findUrlPath('code/mageplaza_related_productlist/')) {
+                            } else if (!$target.length) {
                                 waitForElement(step.element, function ($target) {
                                     waitForPageStable(function() {
                                         if ($target.length) {
@@ -664,19 +614,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
         }
         aside.modal-slide._inner-scroll._show{
             left: 40%;
-        }
-        #add_new_rule_block.active {
-            box-shadow: 0px -7px 12px 4px rgba(0, 102, 255, 0.6) !important;
-        }
-
-        ul[data-ui-id="adminhtml-mageplaza-autorelated-grid-container-add-new-rule-block-button-dropdown-menu"] {
-            box-shadow: 1px 14px 12px 4px rgba(0, 102, 255, 0.6) !important;
-        }
-        #autorelated_rule_edit_tabs_main_content > div:nth-child(2) > label > h1 {
-            margin-top: 0;
-        }
-        button[data-index="button_related"] {
-            box-shadow: 0px 1px 12px 10px rgba(0, 102, 255, 0.6) !important;
         }
     </style>
 <?php endif; ?>

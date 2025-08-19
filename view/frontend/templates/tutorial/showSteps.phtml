@@ -219,24 +219,15 @@ $hasRegistered = !empty($stepsRegister);
                                 }
 
                                 this.handleTrigger(step);
-                                this.styleARPBlockOnOsc();
                                 this.prepareStepUI(step);
 
                                 const $target = $(step.element);
                                 this.highlightTarget($target);
-                                this.observeDomChanges($target);
 
                                 const $tooltip = this.renderTooltip(step, idx);
                                 this.positionTooltip($tooltip, $target, step);
 
                                 this.bindTooltipEvents($tooltip);
-
-                                if (this.currentStep === 2) {
-                                    const self = this;
-                                    setTimeout(function(){
-                                        self.addProductToCart();
-                                    }, 100);
-                                }
 
                                 $(this.SELECTORS.PAYPAL_BUTTON).css({'position': 'relative', 'z-index': '99'});
                             },
@@ -258,7 +249,7 @@ $hasRegistered = !empty($stepsRegister);
                             highlightTarget: function($target) {
                                 const self = this;
 
-                                if ($target.length && self.currentStep !== 4) {
+                                if ($target.length) {
                                     $target.addClass(this.CSS_CLASSES.HIGHLIGHT);
                                     this.animateBody($target);
                                 } else {
@@ -328,7 +319,6 @@ $hasRegistered = !empty($stepsRegister);
 
                                 switch (position) {
                                     case 'top':
-                                        if (this.currentStep === 0) posBonus = 30;
                                         $tooltip.css({
                                             top: offset.top - $tooltip.outerHeight() - posBonus,
                                             left: offset.left
@@ -336,7 +326,6 @@ $hasRegistered = !empty($stepsRegister);
                                         break;
 
                                     case 'right':
-                                        if (this.currentStep === 1) posBonus = 240;
                                         $tooltip.css({
                                             top: offset.top + $target.outerHeight() / 2 - $tooltip.outerHeight() / 2 - posBonus,
                                             left: offset.left + $target.outerWidth() + 15
@@ -440,8 +429,6 @@ $hasRegistered = !empty($stepsRegister);
                                 const self = this;
                                 const targetNode = document.body;
                                 const config = { childList: true, subtree: true };
-
-                                if (self.currentStep !== 4) return;
 
                                 let debounceTimer;
                                 const observer = new MutationObserver(() => {
@@ -605,22 +592,9 @@ $hasRegistered = !empty($stepsRegister);
                                 const self = this;
                                 var posBonus = 0;
 
-                                if (self.currentStep === 0) {
-                                    posBonus = 550;
-                                }
-
-                                if (self.currentStep === 1) {
-                                    posBonus = 800;
-                                }
                                 $('html,body').animate({
                                     scrollTop: $target.offset().top - 150 - posBonus}, 500
                                 );
-                            },
-
-                            styleARPBlockOnOsc: function() {
-                                if (this.currentStep !== 4) return;
-
-                                $('.mageplaza-autorelated-content').css('float', 'right');
                             },
 
                             isInViewport: function($el) {
