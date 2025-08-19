@@ -100,7 +100,7 @@ class Information extends Generic implements TabInterface
             'name'      => 'content',
             'label'     => __('Notice Content'),
             'title'     => __('Content'),
-            'required'  => true,
+            'required'  => false,
             'config'    => $this->_wysiwygConfig->getConfig()
         ]);
 
