@@ -111,7 +111,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                  * Check if tutorial was previously skipped
                  * @returns {boolean}
                  */
-                function isTutorialSkipped() {
+                function isSkipped() {
                     return localStorage.getItem(STORAGE_KEYS.TUTORIAL_SKIPPED) === 'true';
                 }
 
@@ -164,7 +164,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                  * Show the initial tutorial popup
                  */
                 function showFirstPopup() {
-                    if (isTutorialSkipped()) return;
+                    if (isSkipped()) return;
                     $('#tutorial-overlay, #popup-container, #tutorial-first-box').fadeIn();
                 }
 
@@ -659,7 +659,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                  * Resume tutorial from saved step or show initial popup
                  */
                 function initializeTutorial() {
-                    if (isTutorialSkipped()) return;
+                    if (isSkipped()) return;
 
                     const savedStep = getSavedStep();
 
