@@ -113,8 +113,8 @@ class Information extends Generic implements TabInterface
                 'title' => __('Notice Position'),
                 'required' => true,
                 'options' => [
-                    'bottom' => __('Bottom'),
                     'top' => __('Top'),
+                    'bottom' => __('Bottom'),
                     'right' => __('Right'),
                     'left' => __('Left')
                 ]

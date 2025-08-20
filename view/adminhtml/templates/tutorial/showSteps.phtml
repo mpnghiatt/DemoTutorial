@@ -45,14 +45,15 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
     <div id="popup-container" class="popup-container" style="display: none;font-family: 'Outfit';min-width: 50%">
         <div id="tutorial-first-box" class="tutorial-box" style="display: none;">
             <span class="welcome-title">
-                <?= /* @noEscape */ __('Welcome to ') ?>
-                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ $moduleName  ?></a>
-                <?= /* @noEscape */ __(' Backend Demo') ?>
+                <?= /* @noEscape */ __('Welcome to the  Backend Demo of the ') ?>
+                <br>
+                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ __('Magento 2 ') . $moduleName . __('extension') ?></a>
+                <?= /* @noEscape */ __(' by Mageplaza') ?>
             </span>
             <p class="welcome-content mp-center">
-                <?= /* @noEscape */ __('Start cross-selling with automatic related products') ?>
+                <?= /* @noEscape */ __('Let’s see how you can create brand pages, assign products, and customize brand display') ?>
                 <br>
-                <?= /* @noEscape */ __('blocks anywhere on your website.') ?>
+                <?= /* @noEscape */ __('to enhance your store’s navigation and shopping experience.') ?>
             </p>
             <div class="tutorial-toolbar">
                 <button class="skip-tutorial">Skip</button>
@@ -62,23 +63,18 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
 
         <div id="tutorial-end-box" class="tutorial-box" style="display: none;font-family: 'Outfit';">
             <span class="welcome-title">
-                <?= /* @noEscape */ __('That\'s the end of the backend demo of the') ?>
+                <?= /* @noEscape */ __('That\'s the end of the Backend Demo of') ?>
                 <br>
                 <a href="<?= /* @noEscape */ $exData['live_url'] ?>">
-                    <?= /* @noEscape */ $moduleName ?>
+                    <?= /* @noEscape */ __('Mageplaza ') . $moduleName . __(' extension')?>
                     <br>
                 </a>
             </span>
             <div class="welcome-content">
-                <ul>
-                    <li> <?= /* @noEscape */ __('Explore our detailed tutorials in the') ?>
-                        <a href="<?= /* @noEscape */ $guideUrl ?>"> <?= /* @noEscape */ __('User Guide') ?> </a>
-                        <?= /* @noEscape */ __(', or contact us if you have any questions') ?></li>
-                    <li><?= /* @noEscape */ __('If you want to see how it looks like in the frontend, ') ?>
-                        <a href="<?= /* @noEscape */ $frontend ?>"> <?= /* @noEscape */ __('click here ') ?> </a>
-                        <?= /* @noEscape */ __('to explore') ?>
-                    </li>
-                </ul>
+                <span class="mp-center"><?= __('Check out our ')?>
+                    <a href="<?= $guideUrl?>"><?= __('User Guide')?></a>
+                    <?= __('or contact us if you have any questions.')?>
+                </span>
             </div>
             <div class="tutorial-toolbar">
                 <button class="skip-tutorial">Done</button>
@@ -89,360 +85,646 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
     <script type="text/javascript">
         require(['jquery'], function ($) {
             $(window).on('load', function () {
-                if (localStorage.getItem('tutorialSkipped') === 'true') return;
-                setTimeout(function () {
-                    let steps = <?php echo json_encode(array_values(array_map(function ($step) {
-                        return [
-                            'title'    => $step['module_name'],
-                            'content'  => $step['content'],
-                            'element'  => $step['element'],
-                            'url'      => $step['page'],
-                            'trigger'  => $step['trigger'],
-                            'position' => $step['notice_position'] ?? 'bottom'
-                        ];
-                    }, $steps))); ?>;
-                    let currentStep = -1;
+                // ==================== CONSTANTS & VARIABLES ====================
 
-                    function closeTutorial() {
-                        localStorage.setItem('tutorialSkipped', 'true');
-                        $('#popup-container, #tutorial-overlay').fadeOut();
-                        $('.tutorial-highlight').removeClass('tutorial-highlight');
-                        $('.tutorial-tooltip').remove();
-                        $('.tutorial-tooltip-left').remove();
-                    }
+                // Tutorial steps data from PHP
+                let steps = <?php echo json_encode(array_values(array_map(function ($step) {
+                    return [
+                        'title'    => $step['module_name'],
+                        'content'  => $step['content'],
+                        'element'  => $step['element'],
+                        'url'      => $step['page'],
+                        'trigger'  => $step['trigger'],
+                        'position' => $step['notice_position'] ?? 'bottom'
+                    ];
+                }, $steps))); ?>;
 
-                    function showFirstPopup () {
-                        if (localStorage.getItem('tutorialSkipped') === 'true') return;
-                        $('#tutorial-overlay, #popup-container, #tutorial-first-box').fadeIn();
-                    }
+                let currentStep = -1;
+                const STORAGE_KEYS = {
+                    TUTORIAL_SKIPPED: 'tutorialSkipped',
+                    TUTORIAL_STEP: 'tutorialStep'
+                };
 
-                    function handleTrigger (step) {
-                        const $element = $(step.element);
-                        const isExpanded = $element.hasClass('section-config') || $element.hasClass('active') || $element.hasClass('_show');
-                        if (step.trigger && step.trigger !== 'none'
-                            && ($element.hasClass('section-config') || $element.is('tr'))
-                            && !($element.find('.section-config.active').length || $element.hasClass('active'))) {
-                            const $trigger = $(step.trigger);
-                            if (!isExpanded || !isTriggered) {
-                                if ($trigger.length) {
-                                    const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
-                                    Fieldset.toggleCollapse($trigger.get(0), baseUrl);
-                                } else {
-                                    waitForElement(step.trigger, function ($resolvedTrigger) {
-                                        const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
-                                        Fieldset.toggleCollapse($resolvedTrigger.get(0), baseUrl);
-                                    });
-                                }
+                // ==================== UTILITY FUNCTIONS ====================
+
+                /**
+                 * Check if tutorial was previously skipped
+                 * @returns {boolean}
+                 */
+                function isTutorialSkipped() {
+                    return localStorage.getItem(STORAGE_KEYS.TUTORIAL_SKIPPED) === 'true';
+                }
+
+                /**
+                 * Mark tutorial as skipped in localStorage
+                 */
+                function markTutorialAsSkipped() {
+                    localStorage.setItem(STORAGE_KEYS.TUTORIAL_SKIPPED, 'true');
+                }
+
+                /**
+                 * Save the current step index to localStorage
+                 * @param {number} stepIndex
+                 */
+                function saveCurrentStep(stepIndex) {
+                    localStorage.setItem(STORAGE_KEYS.TUTORIAL_STEP, stepIndex);
+                }
+
+                /**
+                 * Get saved step from localStorage
+                 * @returns {number|null}
+                 */
+                function getSavedStep() {
+                    const saved = localStorage.getItem(STORAGE_KEYS.TUTORIAL_STEP);
+                    return saved !== null ? parseInt(saved) : null;
+                }
+
+                // ==================== DOM MANIPULATION FUNCTIONS ====================
+
+                /**
+                 * Clean up tutorial UI elements
+                 */
+                function cleanupTutorialUI() {
+                    $('.tutorial-highlight').removeClass('tutorial-highlight');
+                    $('.tutorial-tooltip, .tutorial-tooltip-left').remove();
+                    // Remove dynamic styles
+                    $('head style').filter(function() {
+                        return $(this).text().includes('.tutorial-tooltip::before');
+                    }).remove();
+                }
+
+                /**
+                 * Skip the tutorial and hide all UI elements
+                 */
+                function skipTutorial() {
+                    $('#popup-container, #tutorial-overlay').fadeOut();
+                }
+
+                /**
+                 * Show the initial tutorial popup
+                 */
+                function showFirstPopup() {
+                    if (isTutorialSkipped()) return;
+                    $('#tutorial-overlay, #popup-container, #tutorial-first-box').fadeIn();
+                }
+
+                /**
+                 * Create and return tooltip HTML content
+                 * @param {Object} step - Current step data
+                 * @param {number} index - Current step index
+                 * @returns {string} HTML content for tooltip
+                 */
+                function createTooltipContent(step, index) {
+                    return `
+                <div class="content-title">${step.title}</div>
+                <div class="step-content">${step.content}</div>
+                <div class="tutorial-toolbar">
+                    <button class="skip-tutorial">Skip</button>
+                    <span id="step-counter">${index + 1} of ${steps.length}</span>
+                    <div>
+                        <button id="prev-step" ${index === 0 ? 'style="display:none;"' : ''}>Back</button>
+                        <button id="next-step" ${index === steps.length ? 'style="display:none;"' : ''}>Next</button>
+                    </div>
+                </div>
+            `;
+                }
+
+                // ==================== POSITIONING FUNCTIONS ====================
+
+                /**
+                 * Position tooltip relative to target element
+                 * @param {Object} offset - Target element offset
+                 * @param {string} position - Position type (top, right, left, bottom)
+                 * @param {jQuery} $tooltip - Tooltip element
+                 * @param {jQuery} $target - Target element
+                 */
+                function tooltipPositioning(offset, position, $tooltip, $target) {
+                    const currentOffset = $target.offset();
+                    if (!currentOffset) return;
+
+                    const tooltipHeight = $tooltip.outerHeight();
+                    const tooltipWidth = $tooltip.outerWidth();
+                    const targetHeight = $target.outerHeight();
+                    const targetWidth = $target.outerWidth();
+
+                    switch (position) {
+                        case 'top':
+                            $tooltip.css({
+                                top: offset.top - tooltipHeight - 15,
+                                left: offset.left,
+                                position: 'absolute'
+                            });
+                            break;
+
+                        case 'right':
+                            $tooltip.css({
+                                top: offset.top + targetHeight / 2 - tooltipHeight / 2,
+                                left: offset.left + targetWidth + 30,
+                                position: 'absolute'
+                            });
+                            break;
+
+                        case 'left':
+                            let leftPosBonus = 0,
+                                leftTopPosBonus = 0;
+
+                            if (currentStep === 16) {
+                                leftPosBonus = -330;
+                                leftTopPosBonus = -275;
                             }
-                        } else if (step.trigger && step.trigger !== 'none') {
-                            let target = $(step.trigger);
-                            if (target.length && !$element.hasClass('_show')) {
-                                target.trigger('click');
-                            }
-                        }
-                    }
-
-                    function tooltipPositioning(offset, position, $tooltip, $target) {
-                        const currentOffset = $target.offset();
-                        if (!currentOffset) return;
-                        switch (position) {
-                            case 'top':
-                                $tooltip.css({
-                                    top: offset.top - $tooltip.outerHeight() - 15,
-                                    left: offset.left,
-                                    position: 'absolute'
-                                });
-                                break;
-                            case 'right':
-                                $tooltip.css({
-                                    top: offset.top + $target.outerHeight() / 2 - $tooltip.outerHeight() / 2,
-                                    left: offset.left + $target.outerWidth() + 30,
-                                    position: 'absolute'
-                                });
-                                break;
-                            case 'left':
-                                posBonus = 0;
-
-                                $tooltip.css({
-                                    top: offset.top + $target.outerHeight() / 2 - $tooltip.outerHeight() / 2,
-                                    left: offset.left - 10 - $target.outerWidth() / 2 - $tooltip.outerWidth() / 2 - posBonus,
-                                    position: 'absolute'
-                                });
-                                break;
-                            case 'bottom':
-                            default:
-                                posBonus = 0;
-
-                                $tooltip.css({
-                                    top: offset.top + $target.outerHeight() + 30 + posBonus,
-                                    left: offset.left,
-                                    position: 'absolute'
-                                });
-                                break;
-                        }
-                    }
-
-                    function waitForElement (selector, callback, timeout = 4000) {
-                        const start = Date.now();
-
-                        $('body').trigger('processStart');
-
-                        const interval = setInterval(() => {
-                            const $el = $(selector);
-
-                            if ($el.length) {
-                                clearInterval(interval);
-                                $('body').trigger('processStop');
-                                callback($el);
-                            } else if (Date.now() - start > timeout) {
-                                clearInterval(interval);
-                                $('body').trigger('processStop');
-                                console.warn('Timeout waiting for element:', selector);
-                            }
-                        }, 1000);
-                    }
-
-                    function waitForPageStable (callback, timeout = 4000) {
-                        let lastHeight = 0;
-                        let stableCount = 0;
-                        const requiredStableCount = 10;
-                        const start = Date.now();
-
-                        $('body').trigger('processStart');
-
-                        const checkStability = setInterval(() => {
-                            const currentHeight = document.body.scrollHeight;
-
-                            if (currentHeight === lastHeight) {
-                                stableCount++;
-                            } else {
-                                stableCount = 0;
-                                lastHeight = currentHeight;
-                            }
-
-                            if (stableCount >= requiredStableCount) {
-                                clearInterval(checkStability);
-                                $('body').trigger('processStop');
-                                setTimeout(callback, 200);
-                            } else if (Date.now() - start > timeout) {
-                                clearInterval(checkStability);
-                                $('body').trigger('processStop');
-                                console.warn('Page stability timeout, proceeding anyway');
-                                callback();
-                            }
-                        }, 1000);
-                    }
-
-                    function scrollToTop (duration = 600) {
-                        $('html, body').animate({scrollTop: 0}, duration);
-                    }
-
-                    function scrollToElement (target, pos) {
-                        $('html, body').animate({scrollTop: target.offset().top - pos}, 500);
-                    }
-
-                    function findUrlPath(path) {
-                        return window.location.pathname.includes(path)
-                    }
-
-                    function renderStep($target, step, index) {
-                        let overlay = $target.find('#tutorial-overlay');
-
-                        if (overlay.length) {
-                            $target.parent().append(overlay);
-                        }
-
-                        if (($target.is('button') || $target.is('[type="button"]'))) {
-                            const $wrapper = $('<div class="tutorial-highlight-wrapper"></div>');
-                            $target.wrap($wrapper);
-                            $target.parent().addClass('tutorial-highlight');
-                        } else {
-                            $target.addClass('tutorial-highlight');
-
-                        }
-
-                        scrollToElement($target, 230);
-
-                        let $tooltip = '';
-                        if ( step.position === 'left') {
-                            $tooltip = $('<div class="tutorial-tooltip-left"></div>');
-                        } else {
-                            $tooltip = $('<div class="tutorial-tooltip"></div>');
-                        }
-
-                        $tooltip.html(`
-                            <div class="content-title">${step.title}</div>
-                            <div class="step-content">${step.content}</div>
-                            <div class="tutorial-toolbar">
-                                <button class="skip-tutorial">Skip</button>
-                                <span id="step-counter">${index + 1} of ${steps.length}</span>
-                                <div>
-                                    <button id="prev-step" ${index === 0 ? 'style="display:none;"' : ''}>Back</button>
-                                    <button id="next-step" ${index === steps.length ? 'style="display:none;"' : ''}>Next</button>
-                                </div>
-                            </div>
-                        `);
-
-                        $('body').append($tooltip);
-
-                        // Tooltip positioning
-                        let offset = $target.offset();
-                        let position = step.position || 'bottom';
-
-                        $tooltip.addClass(position);
-
-                        tooltipPositioning(offset, position, $tooltip, $target);
-                        action(step);
-                        $('head style').filter(function() {
-                            return $(this).text().includes('.tutorial-tooltip::before');
-                        }).remove();
-                    }
-
-                    function action(step) {
-                        $('#next-step').click(() => {
-                            if (step.trigger) {
-                                handleTrigger(step);
+                            if (currentStep === 17) {
+                                leftPosBonus = -330;
+                                leftTopPosBonus = -605;
                             }
 
-                            if (currentStep < steps.length - 1) {
-                                currentStep++;
-                                localStorage.setItem('tutorialStep', currentStep);
-                                showStep(currentStep);
-                            } else {
-                                $('.tutorial-tooltip').remove();
-                                $('.tutorial-tooltip-left').remove();
-                                $('.tutorial-highlight').removeClass('tutorial-highlight');
-                                $('#tutorial-end-box').fadeIn();
-                            }
-                        });
+                            $tooltip.css({
+                                top: offset.top + targetHeight / 2 - tooltipHeight / 2 + leftTopPosBonus,
+                                left: offset.left - 10 - targetWidth / 2 - tooltipWidth / 2 - leftPosBonus,
+                                position: 'absolute'
+                            });
+                            break;
 
-                        $('#prev-step').click(() => {
-                            if (step.trigger) {
-                                handleTrigger(step);
+                        case 'bottom':
+                        default:
+                            let bottomPosBonus = 0;
+                            if (currentStep === 13) {
+                                bottomPosBonus = 1210;
                             }
-                            if (currentStep > 0) {
-                                currentStep--;
-                                localStorage.setItem('tutorialStep', currentStep);
-                                showStep(currentStep);
-                            }
-                        });
-
-                        $('.skip-tutorial').click(closeTutorial);
+                            $tooltip.css({
+                                top: offset.top + targetHeight + 30 + bottomPosBonus,
+                                left: offset.left,
+                                position: 'absolute'
+                            });
+                            break;
                     }
-                    function showStep(index) {
-                        if (index >= 0 && index < steps.length) {
-                            let step = steps[index];
+                }
 
-                            if (window.location.pathname !== step.url) {
-                                localStorage.setItem('tutorialStep', index);
-                                window.location.href = step.url;
-                                return;
-                            }
-
-                            if (step.trigger) {
-                                handleTrigger(step);
-                            }
-
-                            $('.tutorial-highlight').removeClass('tutorial-highlight');
-                            $('.tutorial-tooltip').remove();
-                            $('.tutorial-tooltip-left').remove();
-
-                            let $target = $(step.element);
-
-                            if ($target.length) {
-                                renderStep($target, step, index);
-                            } else if (!$target.length) {
-                                waitForElement(step.element, function ($target) {
-                                    waitForPageStable(function() {
-                                        if ($target.length) {
-                                            renderStep($target, step, index);
-                                        }
-                                    });
-                                });
-                            } else {
-                                let $tooltip = $('<div class="tutorial-tooltip"></div>');
-                                $tooltip.html(`
-                                <div class="content-title">${step.title}</div>
-                                <div class="step-content">${step.content}</div>
-                                <div class="tutorial-toolbar">
-                                    <button class="skip-tutorial">Skip</button>
-                                    <span id="step-counter">${index + 1} of ${steps.length}</span>
-                                    <div>
-                                        <button id="prev-step" ${index === 0 ? 'style="display:none;"' : ''}>Back</button>
-                                        <button id="next-step" ${index === steps.length ? 'style="display:none;"' : ''}>Next</button>
-                                    </div>
-                                </div>
-                            `);
-
-                                $('body').append($tooltip);
-
-                                // Tooltip positioning
-                                $tooltip.css({
-                                    top: $(window).scrollTop() + ($(window).height() - $tooltip.outerHeight()) / 2,
-                                    left: ($(window).width() - $tooltip.outerWidth()) / 2,
-                                    position: 'absolute'
-                                });
-                                $('<style>.tutorial-tooltip::before { display: none !important; content: none !important; }</style>').appendTo('head');
-                                action(step);
-                            }
-                        }
-                    }
-
-                    function updateTooltipPosition() {
-                        const $tooltip     = $('.tutorial-tooltip');
-                        const $tooltipLeft = $('.tutorial-tooltip-left');
-                        const $target      = $('.tutorial-highlight');
-                        if ($target.length && $target.is(':visible')) {
-                            const step = steps[currentStep];
-                            if (step) {
-                                if ($tooltip.length) {
-                                    tooltipPositioning($target.offset(), step.position, $tooltip, $target);
-                                } else if ($tooltipLeft.length) {
-                                    tooltipPositioning($target.offset(), step.position, $tooltipLeft, $target);
-                                }
-                            }
-                        }
-                    }
-
-                    // Start tutorial
-                    $('#start-tutorial').click(function () {
-                        currentStep = 0;
-                        localStorage.setItem('tutorialStep', currentStep);
-                        $('#tutorial-first-box').fadeOut(function () {
-                            showStep(currentStep);
-                        });
+                /**
+                 * Center tooltip on screen when target element is not available
+                 * @param {jQuery} $tooltip - Tooltip element
+                 */
+                function centerTooltipOnScreen($tooltip) {
+                    $tooltip.css({
+                        top: $(window).scrollTop() + ($(window).height() - $tooltip.outerHeight()) / 2,
+                        left: ($(window).width() - $tooltip.outerWidth()) / 2,
+                        position: 'absolute'
                     });
+                    // Hide tooltip arrow when centered
+                    $('<style>.tutorial-tooltip::before { display: none !important; content: none !important; }</style>').appendTo('head');
+                }
 
-                    // Resume if redirected
-                    let savedStep = localStorage.getItem('tutorialStep');
+                /**
+                 * Update tooltip position on window resize/scroll
+                 */
+                function updateTooltipPosition() {
+                    const $tooltip = $('.tutorial-tooltip, .tutorial-tooltip-left');
+                    const $target = $('.tutorial-highlight');
+
+                    if ($target.length && $target.is(':visible') && $tooltip.length) {
+                        const step = steps[currentStep];
+                        if (step) {
+                            tooltipPositioning($target.offset(), step.position, $tooltip, $target);
+                        }
+                    }
+                }
+
+                // ==================== SCROLL FUNCTIONS ====================
+
+                /**
+                 * Scroll to top of page
+                 * @param {number} duration - Animation duration in ms
+                 */
+                function scrollToTop(duration = 600) {
+                    $('html, body').animate({scrollTop: 0}, duration);
+                }
+
+                /**
+                 * Scroll to specific element
+                 * @param {jQuery} target - Target element to scroll to
+                 * @param {number} offset - Offset from top
+                 */
+                function scrollToElement(target, offset) {
+                    $('html, body').animate({scrollTop: target.offset().top - offset}, 500);
+                }
+
+                // ==================== WAITING FUNCTIONS ====================
+
+                /**
+                 * Wait for element to appear in DOM
+                 * @param {string} selector - CSS selector
+                 * @param {Function} callback - Callback function to execute when element found
+                 * @param {number} timeout - Timeout in milliseconds
+                 */
+                function waitForElement(selector, callback, timeout = 2000) {
+                    const start = Date.now();
+
+                    $('body').trigger('processStart');
+
+                    const interval = setInterval(() => {
+                        const $el = $(selector);
+
+                        if ($el.length) {
+                            clearInterval(interval);
+                            $('body').trigger('processStop');
+                            callback($el);
+                        } else if (Date.now() - start > timeout) {
+                            clearInterval(interval);
+                            $('body').trigger('processStop');
+                            console.warn('Timeout waiting for element:', selector);
+                        }
+                    }, 500);
+                }
+
+                /**
+                 * Wait for page to become stable (no height changes)
+                 * @param {Function} callback - Callback to execute when page is stable
+                 * @param {number} timeout - Timeout in milliseconds
+                 */
+                function waitForPageStable(callback, timeout = 2000) {
+                    let lastHeight = 0;
+                    let stableCount = 0;
+                    const requiredStableCount = 10;
+                    const start = Date.now();
+
+                    $('body').trigger('processStart');
+
+                    const checkStability = setInterval(() => {
+                        const currentHeight = document.body.scrollHeight;
+
+                        if (currentHeight === lastHeight) {
+                            stableCount++;
+                        } else {
+                            stableCount = 0;
+                            lastHeight = currentHeight;
+                        }
+
+                        if (stableCount >= requiredStableCount) {
+                            clearInterval(checkStability);
+                            $('body').trigger('processStop');
+                            setTimeout(callback, 200);
+                        } else if (Date.now() - start > timeout) {
+                            clearInterval(checkStability);
+                            $('body').trigger('processStop');
+                            console.warn('Page stability timeout, proceeding anyway');
+                            callback();
+                        }
+                    }, 500);
+                }
+
+                // ==================== TRIGGER HANDLING FUNCTIONS ====================
+
+                /**
+                 * Check if current URL contains specified path
+                 * @param {string} path - Path to check
+                 * @returns {boolean}
+                 */
+                function findUrlPath(path) {
+                    return window.location.pathname.includes(path);
+                }
+
+                /**
+                 * Handle step trigger actions (clicks, expansions, etc.)
+                 * @param {Object} step - Step configuration
+                 */
+                function handleTrigger(step) {
+                    const $element = $(step.element);
+                    const isExpanded = $element.hasClass('section-config') ||
+                        $element.hasClass('active') ||
+                        $element.hasClass('_show');
+
+                    // Handle fieldset expansion triggers
+                    if (step.trigger && step.trigger !== 'none' &&
+                        ($element.hasClass('section-config') || $element.is('tr')) &&
+                        !($element.find('.section-config.active').length || $element.hasClass('active'))) {
+
+                        const $trigger = $(step.trigger);
+                        if (!isExpanded) {
+                            if ($trigger.length) {
+                                const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
+                                Fieldset.toggleCollapse($trigger.get(0), baseUrl);
+                            } else {
+                                waitForElement(step.trigger, function ($resolvedTrigger) {
+                                    const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
+                                    Fieldset.toggleCollapse($resolvedTrigger.get(0), baseUrl);
+                                });
+                            }
+                        }
+                    }
+                    // Handle general click triggers
+                    else if (step.trigger && step.trigger !== 'none') {
+                        let target = $(step.trigger);
+                        if (target.length && !$element.hasClass('_show')) {
+                            target.trigger('click');
+                        } else {
+                            $('#entity').val(step.trigger).trigger('change');
+                        }
+                    }
+                }
+
+                // ==================== STEP RENDERING FUNCTIONS ====================
+
+                /**
+                 * Apply highlighting to target element
+                 * @param {jQuery} $target - Element to highlight
+                 */
+                function applyHighlighting($target) {
+                    if ($target.is('button') || $target.is('[type="button"]')) {
+                        const $wrapper = $('<div class="tutorial-highlight-wrapper"></div>');
+                        $target.wrap($wrapper);
+                        $target.parent().addClass('tutorial-highlight');
+                        $('<style>.tutorial-tooltip:before { left: 4% !important; }</style>').appendTo('head');
+                    } else {
+                        $target.addClass('tutorial-highlight');
+                    }
+                }
+
+                /**
+                 * Create and position tooltip
+                 * @param {Object} step - Step configuration
+                 * @param {number} index - Step index
+                 * @param {jQuery} $target - Target element
+                 */
+                function createAndPositionTooltip(step, index, $target) {
+                    // Create appropriate tooltip type
+                    const $tooltip = step.position === 'left' ?
+                        $('<div class="tutorial-tooltip-left"></div>') :
+                        $('<div class="tutorial-tooltip"></div>');
+
+                    // Set tooltip content
+                    $tooltip.html(createTooltipContent(step, index));
+                    $('body').append($tooltip);
+
+                    // Position tooltip
+                    const offset = $target.offset();
+                    const position = step.position || 'bottom';
+                    $tooltip.addClass(position);
+                    tooltipPositioning(offset, position, $tooltip, $target);
+                }
+
+                /**
+                 * Render tutorial step with target element
+                 * @param {jQuery} $target - Target element
+                 * @param {Object} step - Step configuration
+                 * @param {number} index - Step index
+                 */
+                function renderStep($target, step, index) {
+                    // Move overlay to correct parent if needed
+                    let overlay = $target.find('#tutorial-overlay');
+                    if (overlay.length) {
+                        $target.parent().append(overlay);
+                    }
+
+                    // Apply highlighting to target element
+                    applyHighlighting($target);
+
+
+                    if (currentStep === 13) {
+                        scrollToElement($target, -1000);
+                    } else {
+                        scrollToElement($target, 300);
+
+                    }
+                    // Scroll to target element
+
+                    // Create and position tooltip
+                    createAndPositionTooltip(step, index, $target);
+
+                    // Attach event handlers for this step
+                    attachStepEventHandlers(step);
+                }
+
+                /**
+                 * Render step when target element is not found
+                 * @param {Object} step - Step configuration
+                 * @param {number} index - Step index
+                 */
+                function renderStepWithoutTarget(step, index) {
+                    const $tooltip = $('<div class="tutorial-tooltip"></div>');
+                    $tooltip.html(createTooltipContent(step, index));
+                    $('body').append($tooltip);
+
+                    // Center tooltip on screen
+                    centerTooltipOnScreen($tooltip);
+
+                    // Attach event handlers
+                    attachStepEventHandlers(step);
+                }
+
+                function removeOverrideOverlay(index) {
+                    if (index === 8) {
+                        $('#tutorial-overlay, #popup-container').hide();
+                        $('<style>.modals-overlay { background: rgba(0, 0, 0, 0.7) !important; }</style>').appendTo('head');
+                    } else {
+                        $('#tutorial-overlay, #popup-container').show();
+                    }
+                }
+
+                // ==================== EVENT HANDLER FUNCTIONS ====================
+
+                /**
+                 * Handle next step button click
+                 * @param {Object} step - Current step configuration
+                 */
+                function handleNextStep(step) {
+                    if (step.trigger) {
+                        handleTrigger(step);
+                    }
+
+                    if (currentStep === 8) {
+                        closeReportPopup();
+                    }
+
+                    if (currentStep < steps.length - 1) {
+                        currentStep++;
+                        saveCurrentStep(currentStep);
+                        showStep(currentStep);
+                    } else {
+                        // Tutorial completed - show end screen
+                        cleanupTutorialUI();
+                        $('#tutorial-end-box').fadeIn();
+                    }
+                }
+
+                /**
+                 * Handle previous step button click
+                 * @param {Object} step - Current step configuration
+                 */
+                function handlePreviousStep(step) {
+                    if (step.trigger) {
+                        handleTrigger(step);
+                    }
+
+                    if (currentStep === 8) {
+                        closeReportPopup();
+                    }
+
+                    if (currentStep > 0) {
+                        currentStep--;
+                        saveCurrentStep(currentStep);
+                        showStep(currentStep);
+                    }
+                }
+
+                /**
+                 * Attach event handlers for current step
+                 * @param {Object} step - Step configuration
+                 */
+                function attachStepEventHandlers(step) {
+                    // Next step handler
+                    $('#next-step').off('click').on('click', () => handleNextStep(step));
+
+                    // Previous step handler
+                    $('#prev-step').off('click').on('click', () => handlePreviousStep(step));
+
+                    // Skip tutorial handler
+                    $('.skip-tutorial').off('click').on('click', closeTutorial);
+                }
+
+                function closeReportPopup() {
+                    $("h1.modal-title:contains('Brand Revenue Report')")
+                        .siblings(".action-close")
+                        .trigger("click");
+                }
+
+                // ==================== MAIN TUTORIAL FUNCTIONS ====================
+
+                /**
+                 * Close and cleanup tutorial completely
+                 */
+                function closeTutorial() {
+                    markTutorialAsSkipped();
+                    cleanupTutorialUI();
+                    skipTutorial();
+                }
+
+                /**
+                 * Show specific tutorial step
+                 * @param {number} index - Step index to show
+                 */
+                function showStep(index) {
+                    if (index < 0 || index >= steps.length) return;
+
+                    const step = steps[index];
+
+                    // Check if we need to navigate to different page
+                    if (window.location.pathname !== step.url) {
+                        saveCurrentStep(index);
+                        window.location.href = step.url;
+                        return;
+                    }
+
+                    // Handle step trigger if present
+                    if (step.trigger) {
+                        handleTrigger(step);
+                    }
+
+                    // Clean up previous step UI
+                    $('.tutorial-highlight').removeClass('tutorial-highlight');
+                    $('.tutorial-tooltip, .tutorial-tooltip-left').remove();
+
+                    // Find target element
+                    const $target = $(step.element);
+
+                    if ($target.length) {
+                        // Target element found - render normally
+                        renderStep($target, step, index);
+                    } else if (!$target.length) {
+                        // Target element not found - wait for it
+                        waitForElement(step.element, function ($foundTarget) {
+                            waitForPageStable(function() {
+                                if ($foundTarget.length) {
+                                    renderStep($foundTarget, step, index);
+                                }
+                            });
+                        });
+                    } else {
+                        renderStepWithoutTarget(step, index);
+                    }
+
+                    removeOverrideOverlay(index);
+                }
+
+                /**
+                 * Start tutorial from beginning
+                 */
+                function startTutorial() {
+                    currentStep = 0;
+                    saveCurrentStep(currentStep);
+                    $('#tutorial-first-box').fadeOut(function () {
+                        showStep(currentStep);
+                    });
+                }
+
+                /**
+                 * Resume tutorial from saved step or show initial popup
+                 */
+                function initializeTutorial() {
+                    if (isTutorialSkipped()) return;
+
+                    const savedStep = getSavedStep();
+
                     if (savedStep !== null) {
-                        currentStep = parseInt(savedStep);
+                        // Resume from saved step
+                        currentStep = savedStep;
                         $('#tutorial-overlay, #popup-container').show();
                         showStep(currentStep);
                     } else {
+                        // Show initial popup
                         showFirstPopup();
-                        $('.skip-tutorial').click(closeTutorial);
+                        $('.skip-tutorial').off('click').on('click', closeTutorial);
                     }
+                }
 
-                    $('#prev-last-step').click(function () {
-                        currentStep = steps.length - 1;
-                        $('#tutorial-end-box').fadeOut(function () {
-                            showStep(currentStep);
-                        });
+                /**
+                 * Go back to last step from end screen
+                 */
+                function goBackToLastStep() {
+                    currentStep = steps.length - 1;
+                    $('#tutorial-end-box').fadeOut(function () {
+                        showStep(currentStep);
                     });
+                }
 
-                    $(window).on('resize', updateTooltipPosition);
-                    $(window).on('scroll', updateTooltipPosition);
-                    $(document).on('click', 'button.navigation-close', function () {
-                        updateTooltipPosition();
-                    });
-                    $(document).on('click', '#show-popup-btn', function () {
-                        updateTooltipPosition();
-                    });
+                // ==================== EVENT LISTENERS SETUP ====================
 
-                }, 0);
+                /**
+                 * Set up all global event listeners
+                 */
+                function setupEventListeners() {
+                    // Start tutorial button
+                    $('#start-tutorial').off('click').on('click', startTutorial);
+
+                    // Go back to last step from end screen
+                    $('#prev-last-step').off('click').on('click', goBackToLastStep);
+
+                    // Window resize and scroll handlers
+                    $(window).off('resize.tutorial scroll.tutorial')
+                        .on('resize.tutorial scroll.tutorial', updateTooltipPosition);
+
+                    // Navigation and popup handlers
+                    $(document).off('click.tutorial', 'button.navigation-close, #show-popup-btn')
+                        .on('click.tutorial', 'button.navigation-close, #show-popup-btn', updateTooltipPosition);
+                }
+
+                // ==================== INITIALIZATION ====================
+
+                /**
+                 * Initialize the tutorial system
+                 */
+                function init() {
+                    // Set up event listeners
+                    setupEventListeners();
+
+                    // Start tutorial initialization with slight delay
+                    setTimeout(function () {
+                        initializeTutorial();
+                    }, 0);
+                }
+
+                // Start the tutorial system
+                init();
             });
-        })
+        });
     </script>
     <style>
         .tutorial-overlay {
@@ -518,12 +800,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
         }
         .welcome-content {
             display: grid;
-        }
-        .welcome-content ul {
-            padding-left: 30px;
-        }
-        .welcome-content ul li {
-            list-style-type: disc;
         }
 
         .mp-center {
@@ -612,8 +888,9 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
         #step-counter {
             color: #1E2022;
         }
-        aside.modal-slide._inner-scroll._show{
-            left: 40%;
+
+        .tutorial-highlight-wrapper {
+            width: max-content;
         }
     </style>
 <?php endif; ?>
