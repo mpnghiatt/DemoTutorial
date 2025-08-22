@@ -294,10 +294,17 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                             if ([7, 9, 10, 20, 21].includes(currentStep)) {
                                 $target.addClass('tutorial-highlight-box-shadow');
                             }
+                            if (currentStep === 13) {
+                                $target.addClass('tutorial-highlight-height-bonus');
+                            }
                         }
                         if (currentStep === 9) {
                             scrollToElement($target, 400);
-                        } else {
+                        }
+                        else if(currentStep === 1){
+                            scrollToElement($target, 10);
+                        }
+                        else {
                             scrollToElement($target, 230);
                         }
 
@@ -358,6 +365,13 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                                 currentStep++;
                                 localStorage.setItem('tutorialStep', currentStep);
                                 showStep(currentStep);
+                                if ($('#mpdemo-content').is(':hidden') && currentStep === 13) {
+                                    waitForPageStable(() => {
+                                        if ($('#mpdemo-content').is(':hidden')) {
+                                            updateTooltipPositionAfterDemoNavOff();
+                                        }
+                                    }, 500);
+                                }
                             } else {
                                 $('.tutorial-tooltip').remove();
                                 $('.tutorial-tooltip-left').remove();
@@ -374,6 +388,9 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                                 currentStep--;
                                 localStorage.setItem('tutorialStep', currentStep);
                                 showStep(currentStep);
+                                if ($('#mpdemo-content').is(':hidden') && currentStep === 13) {
+                                    updateTooltipPositionAfterDemoNavOff();
+                                }
                             }
                         });
 
@@ -454,6 +471,32 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         }
                     }
 
+                    function updateTooltipPositionAfterDemoNavOff() {
+                        const $tooltip     = $('.tutorial-tooltip');
+                        const $tooltipLeft = $('.tutorial-tooltip-left');
+                        const $target      = $('.tutorial-highlight');
+
+                        if ($target.length && $target.is(':visible')) {
+                            const step = steps[currentStep];
+                            if (step) {
+                                let offset = $target.offset();
+
+                                if (currentStep === 13) {
+                                    offset = {
+                                        top: offset.top,
+                                        left: offset.left + 120
+                                    };
+                                }
+
+                                if ($tooltip.length) {
+                                    tooltipPositioning(offset, step.position, $tooltip, $target);
+                                } else if ($tooltipLeft.length) {
+                                    tooltipPositioning(offset, step.position, $tooltipLeft, $target);
+                                }
+                            }
+                        }
+                    }
+
                     // Start tutorial
                     $('#start-tutorial').click(function () {
                         currentStep = 0;
@@ -484,7 +527,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     $(window).on('resize', updateTooltipPosition);
                     $(window).on('scroll', updateTooltipPosition);
                     $(document).on('click', 'button.navigation-close', function () {
-                        updateTooltipPosition();
+                        updateTooltipPositionAfterDemoNavOff();
                     });
                     $(document).on('click', '#show-popup-btn', function () {
                         updateTooltipPosition();
@@ -657,6 +700,10 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
             transform: rotate(180deg);
             top: 40%;
             left: 99%;
+        }
+
+        .tutorial-highlight-height-bonus {
+            height: 400px !important;
         }
 
         #step-counter {
