@@ -93,14 +93,14 @@ class Information extends Generic implements TabInterface
             'name'     => 'element',
             'label'    => __('Element Selector'),
             'title'    => __('Element Selector'),
-            'required' => true,
+            'required' => false,
         ]);
 
         $fieldset->addField('content', 'editor', [
             'name'      => 'content',
             'label'     => __('Notice Content'),
             'title'     => __('Content'),
-            'required'  => true,
+            'required'  => false,
             'config'    => $this->_wysiwygConfig->getConfig()
         ]);
 
@@ -113,8 +113,8 @@ class Information extends Generic implements TabInterface
                 'title' => __('Notice Position'),
                 'required' => true,
                 'options' => [
-                    'bottom' => __('Bottom'),
                     'top' => __('Top'),
+                    'bottom' => __('Bottom'),
                     'right' => __('Right'),
                     'left' => __('Left')
                 ]
