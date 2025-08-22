@@ -627,6 +627,9 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     markTutorialAsSkipped();
                     cleanupTutorialUI();
                     skipTutorial();
+                    if (currentStep === 8) {
+                        closeReportPopup();
+                    }
                 }
 
                 /**
