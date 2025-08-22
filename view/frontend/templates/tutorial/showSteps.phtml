@@ -49,13 +49,15 @@ $hasRegistered = !empty($stepsRegister);
         <!-- FIRST BOX -->
         <div id="tutorial-first-box" class="tutorial-box" style="display:none;">
             <span class="welcome-title">
-                <?= /* @noEscape */ __('Welcome to') ?>
-                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ $moduleName ?></a>
-                <?= /* @noEscape */ __(' Front-end Demo.') ?>
+                <?= /* @noEscape */ __('Welcome to the Frontend Demo of  the') ?>
+                <br>
+                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ __('Magento 2 ') . $moduleName . __(' extension') ?></a>
+                <?= /* @noEscape */ __(' by Mageplaza') ?>
             </span>
-            <p class="welcome-content mp-center">
-                <?= /* @noEscape */
-                __('See how buyers can discover related products on your website.') ?>
+            <p class="welcome-content mp-center lh-20">
+                <?= /* @noEscape */ __('Explore how your customers can browse products by brand, view brand pages,') ?>
+                <br>
+                <?= /* @noEscape */ __('and enjoy a more streamlined shopping experience.') ?>
             </p>
 
             <?php if ($hasRegistered && $hasUnregistered): ?>
@@ -82,23 +84,22 @@ $hasRegistered = !empty($stepsRegister);
         <!-- END BOX -->
         <div id="tutorial-end-box" class="tutorial-box" style="display:none;min-width: 60%">
             <span class="welcome-title">
-                <?= /* @noEscape */ __('That\'s the end of Frontend Demo of') ?>
+                <?= /* @noEscape */ __('That\'s the end of the Frontend Demo of') ?>
                 <br>
-                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ $moduleName ?></a>
+                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ __('Mageplaza ') . $moduleName . __(' Extension.') ?></a>
             </span>
-            <div class="welcome-content">
-                <ul>
-                    <li> <?= /* @noEscape */ __('Do you have any questions? ') ?>
-                        <a href="<?= /* @noEscape */ $contactUrl ?>"> <?= /* @noEscape */ __('Contact us') ?> </a>
-                    <li><?= /* @noEscape */ __('For a closer look at setup and tracking, explore the ') ?>
-                        <a href="<?= /* @noEscape */ $backend ?>"> <?= /* @noEscape */ __('Backend Demo') ?> </a>
-                    </li>
-                </ul>
+            <div class="welcome-content mp-center lh-10">
+                <span><?= /* @noEscape */ __('For a closer look at setup and tracking, explore the Backend Demo.') ?></span>
+                <br>
+                <span><?= /* @noEscape */ __('Do you have any questions? ') ?>
+                    <a href="<?= /* @noEscape */ $contactUrl ?>"> <?= /* @noEscape */ __('Contact us') ?></a>
+                </span>
             </div>
             <div class="tutorial-toolbar">
                 <button class="skip-tutorial">Done</button>
                 <button id="prev-last-step">Back</button>
-            </div>    <script type="text/javascript">
+            </div>
+            <script type="text/javascript">
                 require(['jquery'], function ($) {
                     $(document).ready(function () {
                         const FrontendTutorial = {
@@ -117,11 +118,6 @@ $hasRegistered = !empty($stepsRegister);
                                 FIRST_BOX: '#tutorial-first-box',
                                 END_BOX: '#tutorial-end-box',
                                 PAYPAL_BUTTON: 'div#paypal-smart-button'
-                            },
-
-                            CSS_CLASSES: {
-                                HIGHLIGHT: 'tutorial-highlight',
-                                TOOLTIP: 'tutorial-tooltip'
                             },
 
                             // ========== STATE VARIABLES ==========
@@ -203,8 +199,37 @@ $hasRegistered = !empty($stepsRegister);
                             closeTutorial: function() {
                                 localStorage.setItem(this.STORAGE_KEYS.SKIPPED, 'true');
                                 $(this.SELECTORS.POPUP_CONTAINER + ',' + this.SELECTORS.TUTORIAL_OVERLAY).fadeOut();
-                                $('.' + this.CSS_CLASSES.HIGHLIGHT).removeClass(this.CSS_CLASSES.HIGHLIGHT);
-                                $('.' + this.CSS_CLASSES.TOOLTIP).remove();
+                                $('.tutorial-highlight').removeClass('tutorial-highlight');
+                                $('.tutorial-tooltip').remove();
+                            },
+
+                            // ========== FLOW MANAGEMENT ==========
+                            startFlow: function(type) {
+                                this.type = type;
+                                this.steps = this.allSteps[type] || [];
+                                this.currentStep = 0;
+                                localStorage.setItem(this.STORAGE_KEYS.CURRENT_STEP, this.currentStep);
+                                localStorage.setItem(this.STORAGE_KEYS.FLOW_TYPE, type);
+
+                                if (type === 'registered') {
+                                    this.handleDemoAutoLogin();
+                                } else {
+                                    this.startTutorialFlow();
+                                }
+                            },
+
+                            startSingleFlow: function() {
+                                this.type = 'unregistered';
+                                this.steps = this.allSteps[this.type] || [];
+                                this.currentStep = 0;
+                                localStorage.setItem(this.STORAGE_KEYS.CURRENT_STEP, this.currentStep);
+                                this.startTutorialFlow();
+                            },
+
+                            startTutorialFlow: function() {
+                                $(this.SELECTORS.FIRST_BOX).fadeOut(() => {
+                                    this.showStep(this.currentStep);
+                                });
                             },
 
                             // ========== STEP MANAGEMENT ==========
@@ -242,21 +267,32 @@ $hasRegistered = !empty($stepsRegister);
                             },
 
                             prepareStepUI: function(step) {
-                                $('.' + this.CSS_CLASSES.HIGHLIGHT).removeClass(this.CSS_CLASSES.HIGHLIGHT);
-                                $('.' + this.CSS_CLASSES.TOOLTIP).remove();
+                                $('.tutorial-highlight').removeClass('tutorial-highlight');
+                                $('.tutorial-tooltip').remove();
                             },
 
                             highlightTarget: function($target) {
                                 const self = this;
 
                                 if ($target.length) {
-                                    $target.addClass(this.CSS_CLASSES.HIGHLIGHT);
+                                    if (this.currentStep === 0) {
+                                        const $wrapper = $('<div class="tutorial-highlight-wrapper"></div>');
+                                        $target.wrap($wrapper);
+                                        $target.parent().addClass('tutorial-highlight');
+                                        $target.parent().addClass('tutorial-highlight-extend');
+                                        $('<style id="custom-breadcrumb-style">.breadcrumbs { z-index: 999; width: 65% !important; background: #FFF }</style>').appendTo('head');
+                                    } else {
+                                        $target.addClass('tutorial-highlight');
+                                        if (this.currentStep === 3) {
+                                            $target.addClass('tutorial-highlight-60w');
+                                        }
+                                    }
                                     this.animateBody($target);
                                 } else {
                                     this.waitForPageStable(function() {
                                         const $retarget = $(self.steps[self.currentStep].element);
                                         if ($retarget.length) {
-                                            $retarget.addClass(self.CSS_CLASSES.HIGHLIGHT);
+                                            $retarget.addClass('tutorial-highlight');
                                             self.animateBody($retarget);
                                         }
                                     });
@@ -266,10 +302,47 @@ $hasRegistered = !empty($stepsRegister);
                                     $('.tutorial-overlay').insertAfter($target);
                                 }
                             },
+                            // ========== NAVIGATION METHODS ==========
+                            goToNextStep: function() {
+                                this.handleTrigger(this.steps[this.currentStep]);
+
+                                if (this.currentStep < this.steps.length - 1) {
+                                    this.currentStep++;
+                                    this.showStep(this.currentStep);
+                                    if (this.currentStep === 1) {
+                                        $('#custom-breadcrumb-style').remove();
+                                    }
+                                } else {
+                                    this.finishTutorial();
+                                }
+                            },
+
+                            goToPreviousStep: function() {
+                                this.handleTrigger(this.steps[this.currentStep]);
+
+                                if (this.currentStep > 0) {
+                                    this.currentStep--;
+                                    this.showStep(this.currentStep);
+                                }
+                            },
+
+                            goToPreviousFromEnd: function() {
+                                this.currentStep = this.steps.length - 1;
+                                $(this.SELECTORS.END_BOX).fadeOut(() => {
+                                    this.showStep(this.currentStep);
+                                });
+                            },
+
+                            finishTutorial: function() {
+                                $('.tutorial-tooltip').remove();
+                                $('.tutorial-highlight').removeClass('tutorial-highlight');
+                                $(this.SELECTORS.END_BOX).fadeIn();
+                                $(this.SELECTORS.TUTORIAL_OVERLAY).insertAfter(this.SELECTORS.POPUP_CONTAINER);
+                            },
 
                             // ========== TOOLTIP MANAGEMENT ==========
                             renderTooltip: function(step, index) {
-                                const $tooltip = $('<div class="' + this.CSS_CLASSES.TOOLTIP + '"></div>');
+                                const $tooltip = $('<div class="tutorial-tooltip"></div>');
 
                                 const tooltipHTML = `
                     <div class="content-title">${step.title}</div>
@@ -450,70 +523,6 @@ $hasRegistered = !empty($stepsRegister);
                                 this.domObserver = observer;
                             },
 
-                            // ========== NAVIGATION METHODS ==========
-                            goToNextStep: function() {
-                                this.handleTrigger(this.steps[this.currentStep]);
-
-                                if (this.currentStep < this.steps.length - 1) {
-                                    this.currentStep++;
-                                    this.showStep(this.currentStep);
-                                } else {
-                                    this.finishTutorial();
-                                }
-                            },
-
-                            goToPreviousStep: function() {
-                                this.handleTrigger(this.steps[this.currentStep]);
-
-                                if (this.currentStep > 0) {
-                                    this.currentStep--;
-                                    this.showStep(this.currentStep);
-                                }
-                            },
-
-                            goToPreviousFromEnd: function() {
-                                this.currentStep = this.steps.length - 1;
-                                $(this.SELECTORS.END_BOX).fadeOut(() => {
-                                    this.showStep(this.currentStep);
-                                });
-                            },
-
-                            finishTutorial: function() {
-                                $('.' + this.CSS_CLASSES.TOOLTIP).remove();
-                                $('.' + this.CSS_CLASSES.HIGHLIGHT).removeClass(this.CSS_CLASSES.HIGHLIGHT);
-                                $(this.SELECTORS.END_BOX).fadeIn();
-                                $(this.SELECTORS.TUTORIAL_OVERLAY).insertAfter(this.SELECTORS.POPUP_CONTAINER);
-                            },
-
-                            // ========== FLOW MANAGEMENT ==========
-                            startFlow: function(type) {
-                                this.type = type;
-                                this.steps = this.allSteps[type] || [];
-                                this.currentStep = 0;
-                                localStorage.setItem(this.STORAGE_KEYS.CURRENT_STEP, this.currentStep);
-                                localStorage.setItem(this.STORAGE_KEYS.FLOW_TYPE, type);
-
-                                if (type === 'registered') {
-                                    this.handleDemoAutoLogin();
-                                } else {
-                                    this.startTutorialFlow();
-                                }
-                            },
-
-                            startSingleFlow: function() {
-                                this.type = 'unregistered';
-                                this.steps = this.allSteps[this.type] || [];
-                                this.currentStep = 0;
-                                localStorage.setItem(this.STORAGE_KEYS.CURRENT_STEP, this.currentStep);
-                                this.startTutorialFlow();
-                            },
-
-                            startTutorialFlow: function() {
-                                $(this.SELECTORS.FIRST_BOX).fadeOut(() => {
-                                    this.showStep(this.currentStep);
-                                });
-                            },
-
                             // ========== HELPER METHODS ==========
                             handleTrigger: function(step) {
                                 if (step.trigger && step.trigger !== 'none') {
@@ -577,8 +586,8 @@ $hasRegistered = !empty($stepsRegister);
                             },
 
                             updateTooltipPosition: function() {
-                                const $tooltip = $('.' + this.CSS_CLASSES.TOOLTIP);
-                                const $target = $('.' + this.CSS_CLASSES.HIGHLIGHT);
+                                const $tooltip = $('.tutorial-tooltip');
+                                const $target = $('.tutorial-highlight');
 
                                 if ($target.length && $target.is(':visible') && $tooltip.length) {
                                     const step = this.steps[this.currentStep];
@@ -590,7 +599,7 @@ $hasRegistered = !empty($stepsRegister);
 
                             animateBody: function($target) {
                                 const self = this;
-                                var posBonus = 0;
+                                var posBonus = 50;
 
                                 $('html,body').animate({
                                     scrollTop: $target.offset().top - 150 - posBonus}, 500
@@ -697,17 +706,16 @@ $hasRegistered = !empty($stepsRegister);
             font-weight: 600;
             margin-bottom: 10px;
         }
-
+        .lh-10 {
+            line-height: 10px;
+        }
+        .lh-20 {
+            line-height: 20px;
+        }
         .welcome-content {
             padding: 25px 0;
             display: grid;
-        }
-
-        .welcome-content ul {
-            padding-left: 30px;
-        }
-        .welcome-content ul li {
-            list-style-type: disc;
+            font-size: 14px;
         }
 
         .welcome-title a, .welcome-content a {
@@ -786,7 +794,12 @@ $hasRegistered = !empty($stepsRegister);
             top: 65px;
             left: -24px;
         }
-
+        .tutorial-highlight-extend {
+            box-shadow: 0 0 0 19px #FFF;
+        }
+        .tutorial-highlight-60w {
+            width: 60px !important;
+        }
         #step-counter {
             color: #1E2022;
         }
