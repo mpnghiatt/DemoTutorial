@@ -85,28 +85,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
     <script type="text/javascript">
         require(['jquery'], function ($) {
             $(window).on('load', function () {
-<<<<<<< HEAD
-                if (localStorage.getItem('tutorialSkipped') === 'true') return;
-                setTimeout(function () {
-                    let steps = <?php echo json_encode(array_values(array_map(function ($step) {
-                        return [
-                            'title'    => $step['module_name'],
-                            'content'  => $step['content'],
-                            'element'  => $step['element'],
-                            'url'      => $step['page'],
-                            'trigger'  => $step['trigger'],
-                            'position' => $step['notice_position'] ?? 'bottom'
-                        ];
-                    }, $steps))); ?>
-
-                    let currentStep = -1;
-
-                    function closeTutorial() {
-                        localStorage.setItem('tutorialSkipped', 'true');
-                        $('#popup-container, #tutorial-overlay').fadeOut();
-                        $('.tutorial-highlight').removeClass('tutorial-highlight');
-                        $('.tutorial-tooltip').remove();
-=======
                 // ==================== CONSTANTS & VARIABLES ====================
 
                 // Tutorial steps data from PHP
@@ -267,7 +245,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                                 position: 'absolute'
                             });
                             break;
->>>>>>> gtm
                     }
                 }
 
@@ -298,26 +275,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                             tooltipPositioning($target.offset(), step.position, $tooltip, $target);
                         }
                     }
-<<<<<<< HEAD
-
-                    function handleTrigger (step) {
-                        const $element = $(step.element);
-                        const isExpanded = $element.hasClass('section-config') || $element.hasClass('active') || $element.hasClass('_show');
-                        if (step.trigger && step.trigger !== 'none'
-                            && ($element.hasClass('section-config') || $element.is('tr'))
-                            && !($element.find('.section-config.active').length || $element.hasClass('active'))) {
-                            const $trigger = $(step.trigger);
-                            if (!isExpanded || !isTriggered) {
-                                if ($trigger.length) {
-                                    const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
-                                    Fieldset.toggleCollapse($trigger.get(0), baseUrl);
-                                } else {
-                                    waitForElement(step.trigger, function ($resolvedTrigger) {
-                                        const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
-                                        Fieldset.toggleCollapse($resolvedTrigger.get(0), baseUrl);
-                                    });
-                                }
-=======
                 }
 
                 function updateTooltipPositionAfterDemoNavOff() {
@@ -335,12 +292,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                                 tooltipPositioning(offset, step.position, $tooltip, $target);
                             } else if ($tooltipLeft.length) {
                                 tooltipPositioning(offset, step.position, $tooltipLeft, $target);
->>>>>>> gtm
-                            }
-                        } else if (step.trigger && step.trigger !== 'none') {
-                            let target = $(step.trigger);
-                            if (target.length && !$element.hasClass('_show')) {
-                                target.trigger('click');
                             }
                         }
                     }
@@ -540,20 +491,12 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
 
                     // Scroll to target element
 
-<<<<<<< HEAD
-                    function waitForPageStable(callback, timeout = 4000) {
-                        let lastHeight  = 0;
-                        let stableCount = 0;
-                        const requiredStableCount = 10;
-                        const start = Date.now();
-=======
                     // Create and position tooltip
                     createAndPositionTooltip(step, index, $target);
 
                     // Attach event handlers for this step
                     attachStepEventHandlers(step);
                 }
->>>>>>> gtm
 
                 /**
                  * Render step when target element is not found
@@ -572,30 +515,12 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     attachStepEventHandlers(step);
                 }
 
-<<<<<<< HEAD
-                            if (stableCount >= requiredStableCount) {
-                                clearInterval(checkStability);
-                                $('body').trigger('processStop');
-                                setTimeout(callback, 200);
-                            } else if (Date.now() - start > timeout) {
-                                clearInterval(checkStability);
-                                $('body').trigger('processStop');
-                                console.warn('Page stability timeout, proceeding anyway');
-                                callback();
-                            }
-                        }, 1000);
-                    }
-
-                    function scrollToTop(duration = 600) {
-                        $('html, body').animate({ scrollTop: 0 }, duration);
-=======
                 function removeOverrideOverlay(index) {
                     if (index === 8) {
                         $('#tutorial-overlay, #popup-container').hide();
                         $('<style>.modals-overlay { background: rgba(0, 0, 0, 0.7) !important; }</style>').appendTo('head');
                     } else {
                         $('#tutorial-overlay, #popup-container').show();
->>>>>>> gtm
                     }
                 }
 
@@ -631,51 +556,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         handleTrigger(step);
                     }
 
-<<<<<<< HEAD
-                        $('html, body').animate({
-                            scrollTop: $target.offset().top - 200
-                        }, 500);
-
-                        let $tooltip = $('<div class="tutorial-tooltip"></div>');
-                        $tooltip.html(`
-                            <div class="content-title">${step.title}</div>
-                            <div class="step-content">${step.content}</div>
-                            <div class="tutorial-toolbar">
-                                <button class="skip-tutorial">Skip</button>
-                                <span id="step-counter">${index + 1} of ${steps.length}</span>
-                                <div>
-                                    <button id="prev-step" ${index === 0 ? 'style="display:none;"' : ''}>Back</button>
-                                    <button id="next-step" ${index === steps.length ? 'style="display:none;"' : ''}>Next</button>
-                                </div>
-                            </div>
-                        `);
-
-                        $('body').append($tooltip);
-
-                        // Tooltip positioning
-                        let offset = $target.offset();
-                        let position = step.position || 'bottom';
-
-                        $tooltip.addClass(position);
-
-                        tooltipPositioning(offset, position, $tooltip, $target);
-
-                        $('#next-step').click(() => {
-                            handleTrigger(step);
-                            if (currentStep < steps.length - 1) {
-                                currentStep++;
-                                localStorage.setItem('tutorialStep', currentStep);
-                                showStep(currentStep);
-                                if (currentStep === 7) {
-                                    scrollToTop();
-                                }
-                            } else {
-                                $('.tutorial-tooltip').remove();
-                                $('.tutorial-highlight').removeClass('tutorial-highlight');
-                                $('#tutorial-end-box').fadeIn();
-                            }
-                        });
-=======
                     if (currentStep > 0) {
                         currentStep--;
                         saveCurrentStep(currentStep);
@@ -725,7 +605,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         window.location.href = step.url;
                         return;
                     }
->>>>>>> gtm
 
                     // Handle step trigger if present
                     if (step.trigger) {
@@ -754,19 +633,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     } else {
                         renderStepWithoutTarget(step, index);
                     }
-<<<<<<< HEAD
-
-                    function showStep(index) {
-                        if (index >= 0 && index < steps.length) {
-                            let step = steps[index];
-
-                            if (window.location.pathname !== step.url) {
-                                localStorage.setItem('tutorialStep', index);
-                                window.location.href = step.url;
-                                return;
-                            }
-=======
->>>>>>> gtm
 
                     removeOverrideOverlay(index);
                 }
@@ -800,19 +666,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         showFirstPopup();
                         $('.skip-tutorial').off('click').on('click', closeTutorial);
                     }
-<<<<<<< HEAD
-
-                    $('#prev-last-step').click(function () {
-                        currentStep = steps.length - 1;
-                        $('#tutorial-end-box').fadeOut(function () {
-                            showStep(currentStep);
-                        });
-                    });
-
-                    $(window).on('resize', updateTooltipPosition);
-                    $(window).on('scroll', updateTooltipPosition);
-                }, 0);
-=======
                 }
 
                 /**
@@ -867,7 +720,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
 
                 // Start the tutorial system
                 init();
->>>>>>> gtm
             });
         });
     </script>
