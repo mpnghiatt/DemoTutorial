@@ -462,6 +462,9 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         $('<style>.tutorial-tooltip:before { left: 4% !important; }</style>').appendTo('head');
                     } else {
                         $target.addClass('tutorial-highlight');
+                        if (currentStep === 8) {
+                            $target.addClass('mg-top-24');
+                        }
                     }
                 }
 
@@ -924,6 +927,9 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
 
         .tutorial-highlight-wrapper {
             width: max-content;
+        }
+        .mg-top-24 {
+            margin-top: 24rem !important;
         }
     </style>
 <?php endif; ?>
