@@ -288,6 +288,33 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     }
                 }
 
+                function updateTooltipPositionAfterDemoNavOff() {
+                    if ((currentStep !== 16 || currentStep !== 17) && $('#mpdemo-content').is(':visible')) return;
+                    const $tooltip     = $('.tutorial-tooltip');
+                    const $tooltipLeft = $('.tutorial-tooltip-left');
+                    const $target      = $('.tutorial-highlight');
+
+                    if ($target.length && $target.is(':visible')) {
+                        const step = steps[currentStep];
+                        if (step) {
+                            let offset = $target.offset();
+
+                            if (currentStep === 16 || currentStep === 17) {
+                                offset = {
+                                    top: offset.top,
+                                    left: offset.left + 110
+                                };
+                            }
+
+                            if ($tooltip.length) {
+                                tooltipPositioning(offset, step.position, $tooltip, $target);
+                            } else if ($tooltipLeft.length) {
+                                tooltipPositioning(offset, step.position, $tooltipLeft, $target);
+                            }
+                        }
+                    }
+                }
+
                 // ==================== SCROLL FUNCTIONS ====================
 
                 /**
@@ -538,6 +565,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         currentStep++;
                         saveCurrentStep(currentStep);
                         showStep(currentStep);
+                        updateTooltipPositionAfterDemoNavOff();
                     } else {
                         // Tutorial completed - show end screen
                         cleanupTutorialUI();
@@ -562,6 +590,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         currentStep--;
                         saveCurrentStep(currentStep);
                         showStep(currentStep);
+                        updateTooltipPositionAfterDemoNavOff();
                     }
                 }
 
@@ -702,8 +731,12 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         .on('resize.tutorial scroll.tutorial', updateTooltipPosition);
 
                     // Navigation and popup handlers
-                    $(document).off('click.tutorial', 'button.navigation-close, #show-popup-btn')
-                        .on('click.tutorial', 'button.navigation-close, #show-popup-btn', updateTooltipPosition);
+                    $(document).on('click', 'button.navigation-close', function () {
+                        updateTooltipPositionAfterDemoNavOff();
+                    });
+                    $(document).on('click', '#show-popup-btn', function () {
+                        updateTooltipPosition();
+                    });
                 }
 
                 // ==================== INITIALIZATION ====================
