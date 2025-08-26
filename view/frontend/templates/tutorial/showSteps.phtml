@@ -283,13 +283,6 @@ $hasRegistered = !empty($stepsRegister);
 
                         if ($target.length) {
                             $target.addClass('tutorial-highlight');
-                            if ([0,2,3].includes(this.currentStep)) {
-                                $target.addClass('position-fixed');
-                            }
-                            $target.addClass('tutorial-highlight');
-                            if (this.currentStep === 1) {
-                                this.cloneDetail($target);
-                            }
                         } else {
                             this.waitForPageStable(function() {
                                 const $retarget = $(self.steps[self.currentStep].element);
@@ -300,14 +293,13 @@ $hasRegistered = !empty($stepsRegister);
                             });
                         }
 
-                        if ($target.find('.tutorial-overlay').length) {
-                            $('.tutorial-overlay').insertAfter($target);
-                        }
-                    },
-                    // ========== NAVIGATION METHODS ==========
-                    goToNextStep: function() {
-                        this.removeClones();
-                        this.waitForTriggerAndClick(this.steps[this.currentStep], () => {});
+                                if ($target.find('.tutorial-overlay').length) {
+                                    $('.tutorial-overlay').insertAfter($target);
+                                }
+                            },
+                            // ========== NAVIGATION METHODS ==========
+                            goToNextStep: function() {
+                                this.handleTrigger(this.steps[this.currentStep]);
 
                         if (this.currentStep < this.steps.length - 1) {
                             this.currentStep++;
@@ -317,19 +309,16 @@ $hasRegistered = !empty($stepsRegister);
                         }
                     },
 
-                    goToPreviousStep: function() {
-                        this.removeClones();
-                        this.waitForTriggerAndClick(this.steps[this.currentStep], () => {});
+                            goToPreviousStep: function() {
+                                this.handleTrigger(this.steps[this.currentStep]);
 
                         if (this.currentStep > 0) {
                             this.currentStep--;
-                            this.triggerCloseExtraToolbar();
                             this.showStep(this.currentStep);
                         }
                     },
 
                     goToPreviousFromEnd: function() {
-                        this.removeClones();
                         this.currentStep = this.steps.length - 1;
                         $(this.SELECTORS.END_BOX).fadeOut(() => {
                             this.showStep(this.currentStep);
@@ -404,13 +393,6 @@ $hasRegistered = !empty($stepsRegister);
                                 break;
 
                             case 'right':
-                                if ([0,3].includes(this.currentStep)) {
-                                    posBonus = -150;
-                                }
-                                if (this.currentStep === 1) {
-                                    posBonus = -10;
-                                    posLeftBonus = 20;
-                                }
                                 $tooltip.css({
                                     top: offset.top + $target.outerHeight() / 2 - $tooltip.outerHeight() / 2 + posBonus,
                                     left: offset.left + $target.outerWidth() + posLeftBonus
@@ -430,38 +412,6 @@ $hasRegistered = !empty($stepsRegister);
                                     left: offset.left
                                 });
                         }
-                    },
-
-                    cloneDetail: function($target) {
-                        if (!$target || !$target.length) {
-                            return null;
-                        }
-
-                        let pos = $target.offset();
-
-                        let $clone = $target.clone();
-                        let cloneId = $target.attr('id') + '-clone';
-                        $clone
-                            .attr('id', cloneId)
-                            .addClass('is-clone');
-
-                        $clone.css({
-                            position: 'absolute',
-                            top: pos.top,
-                            left: pos.left,
-                            width: $target.outerWidth(),
-                            height: $target.outerHeight() - 10,
-                            zIndex: 1002,
-                            borderRadius: 9
-                        });
-
-                        $('body').append($clone);
-
-                        return $clone;
-                    },
-
-                    removeClones: function() {
-                        $('.is-clone').remove();
                     },
 
                     // ========== EVENT HANDLERS ==========
@@ -599,41 +549,12 @@ $hasRegistered = !empty($stepsRegister);
                     },
 
                     // ========== HELPER METHODS ==========
-                    waitForTriggerAndClick: function(step, callback, timeout = 5000) {
-                        if (!step.trigger || step.trigger === 'none') {
-                            callback();
-                            return;
-                        }
-
-                        const $trigger = $(step.trigger);
-                        if ($trigger.length) {
-                            // Có sẵn trong DOM → click luôn
-                            $trigger.trigger('click');
-                            callback();
-                            return;
-                        }
-
-                        // Chưa có → bắt đầu chờ
-                        const start = Date.now();
-                        const checkExist = setInterval(() => {
-                            const $retry = $(step.trigger);
-                            if ($retry.length) {
-                                clearInterval(checkExist);
-                                $retry.trigger('click');
-                                callback();
-                            } else if (Date.now() - start > timeout) {
-                                clearInterval(checkExist);
-                                console.warn('Trigger not found in time, continue anyway');
-                                callback();
+                    handleTrigger: function(step) {
+                        if (step.trigger && step.trigger !== 'none') {
+                            const $trigger = $(step.trigger);
+                            if ($trigger.length) {
+                                $trigger.trigger('click');
                             }
-                        }, 200);
-                    },
-
-                    triggerCloseExtraToolbar:function() {
-                        const $closeBtn = $('.mp-gtm-toolbar-extra .btn-close .action.close');
-
-                        if ($closeBtn.length) {
-                            $closeBtn.trigger('click');
                         }
                     },
 

@@ -209,9 +209,9 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     if (!currentOffset) return;
 
                     const tooltipHeight = $tooltip.outerHeight();
-                    const tooltipWidth = $tooltip.outerWidth();
-                    const targetHeight = $target.outerHeight();
-                    const targetWidth = $target.outerWidth();
+                    const tooltipWidth  = $tooltip.outerWidth();
+                    const targetHeight  = $target.outerHeight();
+                    const targetWidth   = $target.outerWidth();
 
                     switch (position) {
                         case 'top':
@@ -410,8 +410,8 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     // Handle fieldset expansion triggers
                     if (step.trigger && step.trigger !== 'none' &&
                         ($element.hasClass('section-config') || $element.is('tr')) &&
-                        !($element.find('.section-config.active').length || $element.hasClass('active')) &&
-                        !$('#row_googletagmanager_googletag_ga4').length) {
+                        !($element.find('.section-config.active').length || $element.hasClass('active'))
+                    ) {
                             const $trigger = $(step.trigger);
                             if (!isExpanded) {
                                 if ($trigger.length) {
