@@ -250,18 +250,19 @@ $hasRegistered = !empty($stepsRegister);
                             return;
                         }
 
-                        this.handleTrigger(step);
-                        this.prepareStepUI(step);
+                        this.waitForTriggerAndClick(step, () => {
+                            this.prepareStepUI(step);
 
-                        const $target = $(step.element);
-                        this.highlightTarget($target);
+                            const $target = $(step.element);
+                            this.highlightTarget($target);
 
-                        const $tooltip = this.renderTooltip(step, idx);
-                        this.positionTooltip($tooltip, $target, step);
+                            const $tooltip = this.renderTooltip(step, idx);
+                            this.positionTooltip($tooltip, $target, step);
 
-                        this.bindTooltipEvents($tooltip);
+                            this.bindTooltipEvents($tooltip);
 
-                        $(this.SELECTORS.PAYPAL_BUTTON).css({'position': 'relative', 'z-index': '99'});
+                            $(this.SELECTORS.PAYPAL_BUTTON).css({'position': 'relative', 'z-index': '99'});
+                        });
                     },
 
                     isCorrectUrl: function(stepUrl) {
@@ -307,8 +308,7 @@ $hasRegistered = !empty($stepsRegister);
                     // ========== NAVIGATION METHODS ==========
                     goToNextStep: function() {
                         this.removeClones();
-                        this.triggerCloseExtraToolbar();
-                        this.handleTrigger(this.steps[this.currentStep]);
+                        this.waitForTriggerAndClick(this.steps[this.currentStep], () => {});
 
                         if (this.currentStep < this.steps.length - 1) {
                             this.currentStep++;
@@ -320,11 +320,11 @@ $hasRegistered = !empty($stepsRegister);
 
                     goToPreviousStep: function() {
                         this.removeClones();
-                        this.triggerCloseExtraToolbar();
-                        this.handleTrigger(this.steps[this.currentStep]);
+                        this.waitForTriggerAndClick(this.steps[this.currentStep], () => {});
 
                         if (this.currentStep > 0) {
                             this.currentStep--;
+                            this.triggerCloseExtraToolbar();
                             this.showStep(this.currentStep);
                         }
                     },
@@ -599,13 +599,34 @@ $hasRegistered = !empty($stepsRegister);
                     },
 
                     // ========== HELPER METHODS ==========
-                    handleTrigger: function(step) {
-                        if (step.trigger && step.trigger !== 'none') {
-                            const $trigger = $(step.trigger);
-                            if ($trigger.length) {
-                                $trigger.trigger('click');
-                            }
+                    waitForTriggerAndClick: function(step, callback, timeout = 5000) {
+                        if (!step.trigger || step.trigger === 'none') {
+                            callback();
+                            return;
                         }
+
+                        const $trigger = $(step.trigger);
+                        if ($trigger.length) {
+                            // Có sẵn trong DOM → click luôn
+                            $trigger.trigger('click');
+                            callback();
+                            return;
+                        }
+
+                        // Chưa có → bắt đầu chờ
+                        const start = Date.now();
+                        const checkExist = setInterval(() => {
+                            const $retry = $(step.trigger);
+                            if ($retry.length) {
+                                clearInterval(checkExist);
+                                $retry.trigger('click');
+                                callback();
+                            } else if (Date.now() - start > timeout) {
+                                clearInterval(checkExist);
+                                console.warn('Trigger not found in time, continue anyway');
+                                callback();
+                            }
+                        }, 200);
                     },
 
                     triggerCloseExtraToolbar:function() {
