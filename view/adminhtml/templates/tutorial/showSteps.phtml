@@ -45,16 +45,17 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
     <div id="popup-container" class="popup-container" style="display: none;font-family: 'Outfit';min-width: 50%">
         <div id="tutorial-first-box" class="tutorial-box" style="display: none;">
             <span class="welcome-title">
-                <?= /* @noEscape */ __('Welcome to the backend demo of') ?>
+                <?= /* @noEscape */ __('Welcome to the Backend Demo of the') ?>
                 <br>
-                <?= /* @noEscape */ __('the Magento 2 ')?>
                 <a href="<?= /* @noEscape */ $exData['live_url'] ?>">
-                    <?= /* @noEscape */ $moduleName ?>
+                    <?= /* @noEscape */ __('Magento 2 ') . $moduleName . __('extension') ?>
                 </a>
-                <?= /* @noEscape */ __(' extension by Mageplaza ')?>
+                <?= /* @noEscape */ __(' by Mageplaza ')?>
             </span>
             <p class="welcome-content mp-center">
-                <?= /* @noEscape */ __('Let\'s see how your customers\' actions are tracked with Google Tag Manager settings.') ?>
+                <?= /* @noEscape */ __('Let\'s explore how you can easily showcase Instagram photos and videos on') ?>
+                <br>
+                <?= /* @noEscape */ __('your Magento store, customize widgets, and boost customer engagement.') ?>
             </p>
             <div class="tutorial-toolbar">
                 <button class="skip-tutorial">Skip</button>
@@ -451,6 +452,10 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     } else {
                         resetPadding();
                         $target.addClass('tutorial-highlight');
+
+                        if ([7,8,9].includes(currentStep)) {
+                            $target.addClass('tutorial-highlight-box-shadow');
+                        }
                     }
                 }
 
@@ -833,11 +838,12 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
         }
         .tutorial-highlight {
             background-color: #FFF !important;
-            position: relative;
+            position: relative !important;
             z-index: 1002;
             box-shadow: 0 0 0 4px #fff;
             transition: box-shadow 0.3s ease;
         }
+
         .tutorial-highlight-box-shadow {
             box-shadow: 0 30px 0 #FFF;
         }
