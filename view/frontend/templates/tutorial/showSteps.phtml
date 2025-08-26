@@ -49,15 +49,14 @@ $hasRegistered = !empty($stepsRegister);
         <!-- FIRST BOX -->
         <div id="tutorial-first-box" class="tutorial-box" style="display:none;">
             <span class="welcome-title">
-                <?= /* @noEscape */ __('Welcome to the Frontend Demo of  the') ?>
+                <?= /* @noEscape */ __('Welcome to the frontend demo of ') ?>
                 <br>
-                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ __('Magento 2 ') . $moduleName . __(' extension') ?></a>
+                <?= /* @noEscape */ __('the Magento 2 ') ?>
+                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ $moduleName . __(' extension') ?></a>
                 <?= /* @noEscape */ __(' by Mageplaza') ?>
             </span>
             <p class="welcome-content mp-center lh-20">
-                <?= /* @noEscape */ __('Explore how your customers can browse products by brand, view brand pages,') ?>
-                <br>
-                <?= /* @noEscape */ __('and enjoy a more streamlined shopping experience.') ?>
+                <?= /* @noEscape */ __('Let\'s see how your customers\' actions are tracked with Google Tag Manager settings.') ?>
             </p>
 
             <?php if ($hasRegistered && $hasUnregistered): ?>
@@ -451,8 +450,9 @@ $hasRegistered = !empty($stepsRegister);
                             top: pos.top,
                             left: pos.left,
                             width: $target.outerWidth(),
-                            height: $target.outerHeight(),
-                            zIndex: 1002
+                            height: $target.outerHeight() - 10,
+                            zIndex: 1002,
+                            borderRadius: 9
                         });
 
                         $('body').append($clone);
