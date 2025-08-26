@@ -48,7 +48,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                 <?= /* @noEscape */ __('Welcome to the Backend Demo of the') ?>
                 <br>
                 <a href="<?= /* @noEscape */ $exData['live_url'] ?>">
-                    <?= /* @noEscape */ __('Magento 2 ') . $moduleName . __('extension') ?>
+                    <?= /* @noEscape */ __('Magento 2 ') . $moduleName . __(' extension') ?>
                 </a>
                 <?= /* @noEscape */ __(' by Mageplaza ')?>
             </span>
@@ -67,18 +67,18 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
             <span class="welcome-title">
                 <?= /* @noEscape */ __('That\'s the end of the Backend Demo of') ?>
                 <br>
-                <?= /* @noEscape */__('Mageplaza ')?>
                 <a href="<?= /* @noEscape */ $exData['live_url'] ?>">
-                    <?= /* @noEscape */$moduleName ?>
+                    <?= /* @noEscape */ __('Mageplaza ') . $moduleName . __(' Extension')?>
                     <br>
                 </a>
             </span>
             <div class="welcome-content">
                 <ul>
-                    <li> <?= /* @noEscape */ __('Do you have any questions?') ?>
-                        <a href="<?= /* @noEscape */ $contactUrl ?>"><?= /* @noEscape */ __(' Contact us') ?></a>
+                    <li>
+                        <a href="<?= /* @noEscape */ $contactUrl ?>"><?= /* @noEscape */ __(' Contact us ') ?></a>
+                        <?= /* @noEscape */ __('if you have any questions about our Instagram Feed extension!') ?>
                     </li>
-                    <li><?= /* @noEscape */ __('View more setting tutorials in this ') ?>
+                    <li><?= /* @noEscape */ __('Explore our detailed tutorials in the ') ?>
                         <a href="<?= /* @noEscape */ $guideUrl ?>"> <?= /* @noEscape */ __(' User Guide.') ?> </a>
                     </li>
                 </ul>
@@ -90,7 +90,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
         </div>
     </div>
     <script type="text/javascript">
-        require(['jquery'], function ($) {
+        require(['jquery', 'openSelect'], function ($) {
             $(window).on('load', function () {
                 // ==================== CONSTANTS & VARIABLES ====================
 
@@ -402,41 +402,65 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                  * Handle step trigger actions (clicks, expansions, etc.)
                  * @param {Object} step - Step configuration
                  */
-                function handleTrigger(step) {
+                function handleTrigger (step) {
                     const $element = $(step.element);
-                    const isExpanded = $element.hasClass('section-config') ||
-                        $element.hasClass('active') ||
-                        $element.hasClass('_show');
-
-                    // Handle fieldset expansion triggers
-                    if (step.trigger && step.trigger !== 'none' &&
-                        ($element.hasClass('section-config') || $element.is('tr')) &&
-                        !($element.find('.section-config.active').length || $element.hasClass('active'))
-                    ) {
-                            const $trigger = $(step.trigger);
-                            if (!isExpanded) {
-                                if ($trigger.length) {
+                    const isExpanded = $element.hasClass('section-config') || $element.hasClass('active') || $element.hasClass('_show');
+                    if (step.trigger && step.trigger !== 'none'
+                        && ($element.hasClass('section-config') || $element.is('tr'))
+                        && !($element.find('.section-config.active').length || $element.hasClass('active'))) {
+                        const $trigger = $(step.trigger);
+                        if (!isExpanded) {
+                            if ($trigger.length) {
+                                const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
+                                Fieldset.toggleCollapse($trigger.get(0), baseUrl);
+                            } else {
+                                waitForElement(step.trigger, function ($resolvedTrigger) {
                                     const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
-                                    Fieldset.toggleCollapse($trigger.get(0), baseUrl);
-                                } else {
-                                    waitForElement(step.trigger, function ($resolvedTrigger) {
-                                        const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
-                                        Fieldset.toggleCollapse($resolvedTrigger.get(0), baseUrl);
+                                    Fieldset.toggleCollapse($resolvedTrigger.get(0), baseUrl);
+                                });
+                            }
+                        }
+                    } else if (step.trigger && step.trigger !== 'none') {
+                        let triggers = step.trigger.split(',').map(s => s.trim());
+                        triggers.forEach(sel => {
+                            let target = $(sel);
+                            const isHide = target.hasClass('hide-details');
+
+                            if (target.length && !$element.hasClass('_show') || !isHide) {
+                                if (sel === 'select[name="widget_instance[0][page_group]"]' ||
+                                    sel === 'select[name="widget_instance[0][all_pages][block]"]') {
+
+                                    target.select2({
+                                        minimumResultsForSearch: Infinity,
+                                        templateResult: function (data) {
+                                            if (!data.id) {
+                                                return data.text;
+                                            }
+                                            return data.text;
+                                        }
                                     });
+                                    target.select2('open');
+
+                                } else {
+                                    target.trigger('click');
                                 }
                             }
-                    }
-                    // Handle general click triggers
-                    else if (step.trigger && step.trigger !== 'none') {
-                        let target = $(step.trigger);
-                        if (target.length && !$element.hasClass('_show')) {
-                            target.get(0).dispatchEvent(new MouseEvent('click', { bubbles: true }));
-                        } else {
-                            $('#entity').val(step.trigger).trigger('change');
-                        }
+                        });
+
                     }
                 }
 
+                function runTriggers(step) {
+                    let triggers = steps[currentStep].trigger.split(',').map(s => s.trim());
+                    triggers.forEach(sel => {
+                        if (
+                            sel !== 'select[name="widget_instance[0][page_group]"]' &&
+                            sel !== 'select[name="widget_instance[0][all_pages][block]"]'
+                        ) {
+                            handleTrigger({ trigger: sel });
+                        }
+                    });
+                }
                 // ==================== STEP RENDERING FUNCTIONS ====================
 
                 /**
@@ -563,7 +587,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                  */
                 function handleNextStep(step) {
                     if (step.trigger) {
-                        handleTrigger(step);
+                        runTriggers(step);
                     }
 
                     if (currentStep < steps.length - 1) {
@@ -584,7 +608,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                  */
                 function handlePreviousStep(step) {
                     if (step.trigger) {
-                        handleTrigger(step);
+                        runTriggers(step);
                     }
 
                     if (currentStep > 0) {
@@ -825,12 +849,16 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
             font-weight: 600;
             margin-bottom: 10px;
         }
+        .welcome-content ul {
+            padding-left: 30px;
+        }
         .welcome-content ul li {
             list-style-type: disc;
         }
         .welcome-content {
             margin-left: 20px;
             padding: 20px;
+            align-items: center;
         }
 
         .mp-center {
