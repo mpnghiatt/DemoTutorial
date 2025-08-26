@@ -84,253 +84,272 @@ $hasRegistered = !empty($stepsRegister);
         <!-- END BOX -->
         <div id="tutorial-end-box" class="tutorial-box" style="display:none;min-width: 60%">
             <span class="welcome-title">
-                <?= /* @noEscape */ __('That\'s the end of the Frontend Demo of') ?>
+                <?= /* @noEscape */ __('That\'s the end of ') ?>
                 <br>
-                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ __('Mageplaza ') . $moduleName . __(' Extension.') ?></a>
+                <?= /* @noEscape */ __('the Frontend Demo of Mageplaza') ?>
+                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ $moduleName ?></a>
             </span>
-            <div class="welcome-content mp-center lh-10">
-                <span><?= /* @noEscape */ __('For a closer look at setup and tracking, explore the Backend Demo.') ?></span>
-                <br>
-                <span><?= /* @noEscape */ __('Do you have any questions? ') ?>
-                    <a href="<?= /* @noEscape */ $contactUrl ?>"> <?= /* @noEscape */ __('Contact us') ?></a>
-                </span>
+            <div class="welcome-content lh-10">
+                <ul>
+                    <li> <?= /* @noEscape */ __('Do you have any questions? ') ?>
+                        <a href="<?= $contactUrl ?>"><?= /* @noEscape */ __('Contact us') ?></a>
+                    </li>
+                    <li><?= /* @noEscape */ __('View more setting tutorials in this ') ?>
+                        <a href="<?= /* @noEscape */ $guideUrl ?>"> <?= /* @noEscape */ __('User Guide') ?> </a>
+                    </li>
+                </ul>
             </div>
             <div class="tutorial-toolbar">
                 <button class="skip-tutorial">Done</button>
                 <button id="prev-last-step">Back</button>
             </div>
-            <script type="text/javascript">
-                require(['jquery'], function ($) {
-                    $(document).ready(function () {
-                        const FrontendTutorial = {
-                            // ========== CONSTANTS ==========
-                            STORAGE_KEYS: {
-                                SKIPPED: 'frontendTutorialSkipped',
-                                CURRENT_STEP: 'frontendTutorialStep',
-                                FLOW_TYPE: 'tutorialFlow'
-                            },
+        </div>
+    </div>
+    <script type="text/javascript">
+        require(['jquery'], function ($) {
+            $(document).ready(function () {
+                const FrontendTutorial = {
+                    // ========== CONSTANTS ==========
+                    STORAGE_KEYS: {
+                        SKIPPED: 'frontendTutorialSkipped',
+                        CURRENT_STEP: 'frontendTutorialStep',
+                        FLOW_TYPE: 'tutorialFlow'
+                    },
 
-                            SELECTORS: {
-                                SECTIONS_NAV: '.sections.nav-sections',
-                                SEARCH_BLOCK: '.block.block-search',
-                                TUTORIAL_OVERLAY: '#tutorial-overlay',
-                                POPUP_CONTAINER: '#popup-container',
-                                FIRST_BOX: '#tutorial-first-box',
-                                END_BOX: '#tutorial-end-box',
-                                PAYPAL_BUTTON: 'div#paypal-smart-button'
-                            },
+                    SELECTORS: {
+                        SECTIONS_NAV: '.sections.nav-sections',
+                        SEARCH_BLOCK: '.block.block-search',
+                        TUTORIAL_OVERLAY: '#tutorial-overlay',
+                        POPUP_CONTAINER: '#popup-container',
+                        FIRST_BOX: '#tutorial-first-box',
+                        END_BOX: '#tutorial-end-box',
+                        PAYPAL_BUTTON: 'div#paypal-smart-button'
+                    },
 
-                            // ========== STATE VARIABLES ==========
-                            multiFlow: <?= json_encode($hasRegistered && $hasUnregistered) ?>,
-                            allSteps: {
-                                registered: <?= json_encode(array_values(array_map(function ($s) {
-                                    return [
-                                        'title' => $s['module_name'],
-                                        'content' => $s['content'],
-                                        'element' => $s['element'],
-                                        'url' => $s['page'],
-                                        'trigger' => $s['trigger'],
-                                        'position' => $s['notice_position'] ?? 'bottom'
-                                    ];
-                                }, $stepsRegister))); ?>,
-                                unregistered: <?= json_encode(array_values(array_map(function ($s) {
-                                    return [
-                                        'title' => $s['module_name'],
-                                        'content' => $s['content'],
-                                        'element' => $s['element'],
-                                        'url' => $s['page'],
-                                        'trigger' => $s['trigger'],
-                                        'position' => $s['notice_position'] ?? 'bottom'
-                                    ];
-                                }, $stepsUnregister))); ?>
-                            },
+                    // ========== STATE VARIABLES ==========
+                    multiFlow: <?= json_encode($hasRegistered && $hasUnregistered) ?>,
+                    allSteps: {
+                        registered: <?= json_encode(array_values(array_map(function ($s) {
+                            return [
+                                'title' => $s['module_name'],
+                                'content' => $s['content'],
+                                'element' => $s['element'],
+                                'url' => $s['page'],
+                                'trigger' => $s['trigger'],
+                                'position' => $s['notice_position'] ?? 'bottom'
+                            ];
+                        }, $stepsRegister))); ?>,
+                        unregistered: <?= json_encode(array_values(array_map(function ($s) {
+                            return [
+                                'title' => $s['module_name'],
+                                'content' => $s['content'],
+                                'element' => $s['element'],
+                                'url' => $s['page'],
+                                'trigger' => $s['trigger'],
+                                'position' => $s['notice_position'] ?? 'bottom'
+                            ];
+                        }, $stepsUnregister))); ?>
+                    },
 
-                            steps: [],
-                            currentStep: -1,
-                            type: 'unregistered',
+                    steps: [],
+                    currentStep: -1,
+                    type: 'unregistered',
 
-                            // ========== INITIALIZATION ==========
-                            init: function() {
-                                if (this.isSkipped()) return;
-                                this.setupInitialStyles();
-                                this.resumeOrStartTutorial();
-                                this.bindEvents();
-                            },
+                    // ========== INITIALIZATION ==========
+                    init: function() {
+                        if (this.isSkipped()) return;
+                        this.setupInitialStyles();
+                        this.resumeOrStartTutorial();
+                        this.bindEvents();
+                    },
 
-                            isSkipped: function() {
-                                return localStorage.getItem(this.STORAGE_KEYS.SKIPPED) === 'true';
-                            },
+                    isSkipped: function() {
+                        return localStorage.getItem(this.STORAGE_KEYS.SKIPPED) === 'true';
+                    },
 
-                            setupInitialStyles: function() {
-                                $(this.SELECTORS.SECTIONS_NAV).css('z-index', '1');
-                                $(this.SELECTORS.SEARCH_BLOCK).css('z-index', '1');
-                            },
+                    setupInitialStyles: function() {
+                        $(this.SELECTORS.SECTIONS_NAV).css('z-index', '1');
+                        $(this.SELECTORS.SEARCH_BLOCK).css('z-index', '1');
+                    },
 
-                            // ========== TUTORIAL FLOW CONTROL ==========
+                    // ========== TUTORIAL FLOW CONTROL ==========
 
-                            resumeOrStartTutorial: function() {
-                                const savedStep = localStorage.getItem(this.STORAGE_KEYS.CURRENT_STEP);
+                    resumeOrStartTutorial: function() {
+                        const savedStep = localStorage.getItem(this.STORAGE_KEYS.CURRENT_STEP);
 
-                                if (savedStep !== null) {
-                                    this.resumeTutorial(parseInt(savedStep, 10));
-                                } else {
-                                    this.showFirstPopup();
+                        if (savedStep !== null) {
+                            this.resumeTutorial(parseInt(savedStep, 10));
+                        } else {
+                            this.showFirstPopup();
+                        }
+                    },
+
+                    resumeTutorial: function(savedStep) {
+                        this.currentStep = savedStep;
+                        this.type = this.multiFlow ?
+                            localStorage.getItem(this.STORAGE_KEYS.FLOW_TYPE) || 'unregistered' :
+                            'unregistered';
+                        this.steps = this.allSteps[this.type] || [];
+
+                        $(this.SELECTORS.TUTORIAL_OVERLAY + ',' + this.SELECTORS.POPUP_CONTAINER).show();
+                        this.showStep(this.currentStep);
+                    },
+
+                    showFirstPopup: function() {
+                        if (this.isSkipped()) return;
+                        $(this.SELECTORS.TUTORIAL_OVERLAY + ',' +
+                            this.SELECTORS.POPUP_CONTAINER + ',' +
+                            this.SELECTORS.FIRST_BOX).fadeIn();
+                    },
+
+                    closeTutorial: function() {
+                        this.removeClones();
+                        localStorage.setItem(this.STORAGE_KEYS.SKIPPED, 'true');
+                        $(this.SELECTORS.POPUP_CONTAINER + ',' + this.SELECTORS.TUTORIAL_OVERLAY).fadeOut();
+                        $('.tutorial-highlight').removeClass('tutorial-highlight');
+                        $('.tutorial-tooltip').remove();
+                    },
+
+                    // ========== FLOW MANAGEMENT ==========
+                    startFlow: function(type) {
+                        this.type = type;
+                        this.steps = this.allSteps[type] || [];
+                        this.currentStep = 0;
+                        localStorage.setItem(this.STORAGE_KEYS.CURRENT_STEP, this.currentStep);
+                        localStorage.setItem(this.STORAGE_KEYS.FLOW_TYPE, type);
+
+                        if (type === 'registered') {
+                            this.handleDemoAutoLogin();
+                        } else {
+                            this.startTutorialFlow();
+                        }
+                    },
+
+                    startSingleFlow: function() {
+                        this.type = 'unregistered';
+                        this.steps = this.allSteps[this.type] || [];
+                        this.currentStep = 0;
+                        localStorage.setItem(this.STORAGE_KEYS.CURRENT_STEP, this.currentStep);
+                        this.startTutorialFlow();
+                    },
+
+                    startTutorialFlow: function() {
+                        $(this.SELECTORS.FIRST_BOX).fadeOut(() => {
+                            this.showStep(this.currentStep);
+                        });
+                    },
+
+                    // ========== STEP MANAGEMENT ==========
+                    showStep: function(idx) {
+                        if (idx < 0 || idx >= this.steps.length) return;
+
+                        const step = this.steps[idx];
+
+                        if (!this.isCorrectUrl(step.url)) {
+                            this.navigateToStep(idx, step.url);
+                            return;
+                        }
+
+                        this.handleTrigger(step);
+                        this.prepareStepUI(step);
+
+                        const $target = $(step.element);
+                        this.highlightTarget($target);
+
+                        const $tooltip = this.renderTooltip(step, idx);
+                        this.positionTooltip($tooltip, $target, step);
+
+                        this.bindTooltipEvents($tooltip);
+
+                        $(this.SELECTORS.PAYPAL_BUTTON).css({'position': 'relative', 'z-index': '99'});
+                    },
+
+                    isCorrectUrl: function(stepUrl) {
+                        return window.location.pathname + window.location.search === stepUrl;
+                    },
+
+                    navigateToStep: function(stepIndex, url) {
+                        localStorage.setItem(this.STORAGE_KEYS.CURRENT_STEP, stepIndex);
+                        window.location.href = url;
+                    },
+
+                    prepareStepUI: function(step) {
+                        $('.tutorial-highlight').removeClass('tutorial-highlight');
+                        $('.tutorial-tooltip').remove();
+                    },
+
+                    highlightTarget: function($target) {
+                        const self = this;
+
+                        if ($target.length) {
+                            $target.addClass('tutorial-highlight');
+                            if ([0,2,3].includes(this.currentStep)) {
+                                $target.addClass('position-fixed');
+                            }
+                            $target.addClass('tutorial-highlight');
+                            if (this.currentStep === 1) {
+                                this.cloneDetail($target);
+                            }
+                        } else {
+                            this.waitForPageStable(function() {
+                                const $retarget = $(self.steps[self.currentStep].element);
+                                if ($retarget.length) {
+                                    $retarget.addClass('tutorial-highlight');
+                                    self.animateBody($retarget);
                                 }
-                            },
+                            });
+                        }
 
-                            resumeTutorial: function(savedStep) {
-                                this.currentStep = savedStep;
-                                this.type = this.multiFlow ?
-                                    localStorage.getItem(this.STORAGE_KEYS.FLOW_TYPE) || 'unregistered' :
-                                    'unregistered';
-                                this.steps = this.allSteps[this.type] || [];
+                        if ($target.find('.tutorial-overlay').length) {
+                            $('.tutorial-overlay').insertAfter($target);
+                        }
+                    },
+                    // ========== NAVIGATION METHODS ==========
+                    goToNextStep: function() {
+                        this.removeClones();
+                        this.triggerCloseExtraToolbar();
+                        this.handleTrigger(this.steps[this.currentStep]);
 
-                                $(this.SELECTORS.TUTORIAL_OVERLAY + ',' + this.SELECTORS.POPUP_CONTAINER).show();
-                                this.showStep(this.currentStep);
-                            },
+                        if (this.currentStep < this.steps.length - 1) {
+                            this.currentStep++;
+                            this.showStep(this.currentStep);
+                        } else {
+                            this.finishTutorial();
+                        }
+                    },
 
-                            showFirstPopup: function() {
-                                if (this.isSkipped()) return;
-                                $(this.SELECTORS.TUTORIAL_OVERLAY + ',' +
-                                    this.SELECTORS.POPUP_CONTAINER + ',' +
-                                    this.SELECTORS.FIRST_BOX).fadeIn();
-                            },
+                    goToPreviousStep: function() {
+                        this.removeClones();
+                        this.triggerCloseExtraToolbar();
+                        this.handleTrigger(this.steps[this.currentStep]);
 
-                            closeTutorial: function() {
-                                localStorage.setItem(this.STORAGE_KEYS.SKIPPED, 'true');
-                                $(this.SELECTORS.POPUP_CONTAINER + ',' + this.SELECTORS.TUTORIAL_OVERLAY).fadeOut();
-                                $('.tutorial-highlight').removeClass('tutorial-highlight');
-                                $('.tutorial-tooltip').remove();
-                            },
+                        if (this.currentStep > 0) {
+                            this.currentStep--;
+                            this.showStep(this.currentStep);
+                        }
+                    },
 
-                            // ========== FLOW MANAGEMENT ==========
-                            startFlow: function(type) {
-                                this.type = type;
-                                this.steps = this.allSteps[type] || [];
-                                this.currentStep = 0;
-                                localStorage.setItem(this.STORAGE_KEYS.CURRENT_STEP, this.currentStep);
-                                localStorage.setItem(this.STORAGE_KEYS.FLOW_TYPE, type);
+                    goToPreviousFromEnd: function() {
+                        this.removeClones();
+                        this.currentStep = this.steps.length - 1;
+                        $(this.SELECTORS.END_BOX).fadeOut(() => {
+                            this.showStep(this.currentStep);
+                        });
+                    },
 
-                                if (type === 'registered') {
-                                    this.handleDemoAutoLogin();
-                                } else {
-                                    this.startTutorialFlow();
-                                }
-                            },
+                    finishTutorial: function() {
+                        this.removeClones();
+                        $('.tutorial-tooltip').remove();
+                        $('.tutorial-highlight').removeClass('tutorial-highlight');
+                        $(this.SELECTORS.END_BOX).fadeIn();
+                        $(this.SELECTORS.TUTORIAL_OVERLAY).insertAfter(this.SELECTORS.POPUP_CONTAINER);
+                    },
 
-                            startSingleFlow: function() {
-                                this.type = 'unregistered';
-                                this.steps = this.allSteps[this.type] || [];
-                                this.currentStep = 0;
-                                localStorage.setItem(this.STORAGE_KEYS.CURRENT_STEP, this.currentStep);
-                                this.startTutorialFlow();
-                            },
+                    // ========== TOOLTIP MANAGEMENT ==========
+                    renderTooltip: function(step, index) {
+                        const $tooltip = $('<div class="tutorial-tooltip"></div>');
 
-                            startTutorialFlow: function() {
-                                $(this.SELECTORS.FIRST_BOX).fadeOut(() => {
-                                    this.showStep(this.currentStep);
-                                });
-                            },
-
-                            // ========== STEP MANAGEMENT ==========
-                            showStep: function(idx) {
-                                if (idx < 0 || idx >= this.steps.length) return;
-
-                                const step = this.steps[idx];
-
-                                if (!this.isCorrectUrl(step.url)) {
-                                    this.navigateToStep(idx, step.url);
-                                    return;
-                                }
-
-                                this.handleTrigger(step);
-                                this.prepareStepUI(step);
-
-                                const $target = $(step.element);
-                                this.highlightTarget($target);
-
-                                const $tooltip = this.renderTooltip(step, idx);
-                                this.positionTooltip($tooltip, $target, step);
-
-                                this.bindTooltipEvents($tooltip);
-
-                                $(this.SELECTORS.PAYPAL_BUTTON).css({'position': 'relative', 'z-index': '99'});
-                            },
-
-                            isCorrectUrl: function(stepUrl) {
-                                return window.location.pathname + window.location.search === stepUrl;
-                            },
-
-                            navigateToStep: function(stepIndex, url) {
-                                localStorage.setItem(this.STORAGE_KEYS.CURRENT_STEP, stepIndex);
-                                window.location.href = url;
-                            },
-
-                            prepareStepUI: function(step) {
-                                $('.tutorial-highlight').removeClass('tutorial-highlight');
-                                $('.tutorial-tooltip').remove();
-                            },
-
-                            highlightTarget: function($target) {
-                                const self = this;
-
-                                if ($target.length) {
-                                    $target.addClass('tutorial-highlight');
-                                    this.animateBody($target);
-                                } else {
-                                    this.waitForPageStable(function() {
-                                        const $retarget = $(self.steps[self.currentStep].element);
-                                        if ($retarget.length) {
-                                            $retarget.addClass('tutorial-highlight');
-                                            self.animateBody($retarget);
-                                        }
-                                    });
-                                }
-
-                                if ($target.find('.tutorial-overlay').length) {
-                                    $('.tutorial-overlay').insertAfter($target);
-                                }
-                            },
-                            // ========== NAVIGATION METHODS ==========
-                            goToNextStep: function() {
-                                this.handleTrigger(this.steps[this.currentStep]);
-
-                                if (this.currentStep < this.steps.length - 1) {
-                                    this.currentStep++;
-                                    this.showStep(this.currentStep);
-                                } else {
-                                    this.finishTutorial();
-                                }
-                            },
-
-                            goToPreviousStep: function() {
-                                this.handleTrigger(this.steps[this.currentStep]);
-
-                                if (this.currentStep > 0) {
-                                    this.currentStep--;
-                                    this.showStep(this.currentStep);
-                                }
-                            },
-
-                            goToPreviousFromEnd: function() {
-                                this.currentStep = this.steps.length - 1;
-                                $(this.SELECTORS.END_BOX).fadeOut(() => {
-                                    this.showStep(this.currentStep);
-                                });
-                            },
-
-                            finishTutorial: function() {
-                                $('.tutorial-tooltip').remove();
-                                $('.tutorial-highlight').removeClass('tutorial-highlight');
-                                $(this.SELECTORS.END_BOX).fadeIn();
-                                $(this.SELECTORS.TUTORIAL_OVERLAY).insertAfter(this.SELECTORS.POPUP_CONTAINER);
-                            },
-
-                            // ========== TOOLTIP MANAGEMENT ==========
-                            renderTooltip: function(step, index) {
-                                const $tooltip = $('<div class="tutorial-tooltip"></div>');
-
-                                const tooltipHTML = `
+                        const tooltipHTML = `
                     <div class="content-title">${step.title}</div>
                     <div class="step-content">${step.content}</div>
                     <div class="tutorial-toolbar">
@@ -343,277 +362,318 @@ $hasRegistered = !empty($stepsRegister);
                     </div>
                 `;
 
-                                $tooltip.html(tooltipHTML);
-                                $('body').append($tooltip);
+                        $tooltip.html(tooltipHTML);
+                        $('body').append($tooltip);
 
-                                return $tooltip;
-                            },
+                        return $tooltip;
+                    },
 
-                            positionTooltip: function($tooltip, $target, step) {
-                                if ($target.length) {
-                                    $tooltip.addClass(step.position || 'bottom');
-                                    this.calculateTooltipPosition($target.offset(), step.position || 'bottom', $tooltip, $target);
-                                } else {
-                                    this.positionTooltipCenter($tooltip, step);
+                    positionTooltip: function($tooltip, $target, step) {
+                        if ($target.length) {
+                            $tooltip.addClass(step.position || 'bottom');
+                            this.calculateTooltipPosition($target.offset(), step.position || 'bottom', $tooltip, $target);
+                        } else {
+                            this.positionTooltipCenter($tooltip, step);
+                        }
+                    },
+
+                    positionTooltipCenter: function($tooltip, step) {
+                        if (step.position === 'top') {
+                            $tooltip.css({
+                                top: $(window).scrollTop() + 20,
+                                left: ($(window).width() - $tooltip.outerWidth()) / 2
+                            });
+                            $tooltip.addClass('bottom');
+                        } else {
+                            $tooltip.css({
+                                top: $(window).scrollTop() + ($(window).height() - $tooltip.outerHeight()) / 2,
+                                left: ($(window).width() - $tooltip.outerWidth()) / 2
+                            });
+                        }
+                    },
+
+                    calculateTooltipPosition: function(offset, position, $tooltip, $target) {
+                        let posBonus = 30,
+                            posLeftBonus = 15;
+
+                        switch (position) {
+                            case 'top':
+                                $tooltip.css({
+                                    top: offset.top - $tooltip.outerHeight() - posBonus,
+                                    left: offset.left
+                                });
+                                break;
+
+                            case 'right':
+                                if ([0,3].includes(this.currentStep)) {
+                                    posBonus = -150;
                                 }
-                            },
-
-                            positionTooltipCenter: function($tooltip, step) {
-                                if (step.position === 'top') {
-                                    $tooltip.css({
-                                        top: $(window).scrollTop() + 20,
-                                        left: ($(window).width() - $tooltip.outerWidth()) / 2
-                                    });
-                                    $tooltip.addClass('bottom');
-                                } else {
-                                    $tooltip.css({
-                                        top: $(window).scrollTop() + ($(window).height() - $tooltip.outerHeight()) / 2,
-                                        left: ($(window).width() - $tooltip.outerWidth()) / 2
-                                    });
+                                if (this.currentStep === 1) {
+                                    posBonus = -10;
+                                    posLeftBonus = 20;
                                 }
-                            },
-
-                            calculateTooltipPosition: function(offset, position, $tooltip, $target) {
-                                let posBonus = 30;
-
-                                switch (position) {
-                                    case 'top':
-                                        $tooltip.css({
-                                            top: offset.top - $tooltip.outerHeight() - posBonus,
-                                            left: offset.left
-                                        });
-                                        break;
-
-                                    case 'right':
-                                        $tooltip.css({
-                                            top: offset.top + $target.outerHeight() / 2 - $tooltip.outerHeight() / 2 - posBonus,
-                                            left: offset.left + $target.outerWidth() + 15
-                                        });
-                                        break;
-
-                                    case 'left':
-                                        $tooltip.css({
-                                            top: offset.top + $target.outerHeight() / 2 - $tooltip.outerHeight() / 2,
-                                            left: offset.left - $tooltip.outerWidth() - 30
-                                        });
-                                        break;
-
-                                    default: // bottom
-                                        $tooltip.css({
-                                            top: offset.top + $target.outerHeight() + 30,
-                                            left: offset.left
-                                        });
-                                }
-                            },
-
-                            // ========== EVENT HANDLERS ==========
-                            bindEvents: function() {
-                                const self = this;
-
-                                // Multi-flow buttons
-                                $('.start-flow').on('click', function() {
-                                    self.startFlow($(this).data('type'));
+                                $tooltip.css({
+                                    top: offset.top + $target.outerHeight() / 2 - $tooltip.outerHeight() / 2 + posBonus,
+                                    left: offset.left + $target.outerWidth() + posLeftBonus
                                 });
+                                break;
 
-                                // Single flow button
-                                $('#start-tutorial').on('click', function() {
-                                    self.startSingleFlow();
+                            case 'left':
+                                $tooltip.css({
+                                    top: offset.top + $target.outerHeight() / 2 - $tooltip.outerHeight() / 2,
+                                    left: offset.left - $tooltip.outerWidth() - 30
                                 });
+                                break;
 
-                                // Previous step trong end box
-                                $('#prev-last-step').on('click', function() {
-                                    self.goToPreviousFromEnd();
+                            default: // bottom
+                                $tooltip.css({
+                                    top: offset.top + $target.outerHeight() + 30,
+                                    left: offset.left
                                 });
+                        }
+                    },
 
-                                // Skip tutorial buttons
-                                $('.skip-tutorial').on('click', function() {
-                                    self.closeTutorial();
-                                });
+                    cloneDetail: function($target) {
+                        if (!$target || !$target.length) {
+                            return null;
+                        }
 
-                                // Window events
-                                $(window).on('resize scroll', function() {
-                                    self.updateTooltipPosition();
-                                });
-                            },
+                        let pos = $target.offset();
 
-                            bindTooltipEvents: function($tooltip) {
-                                const self = this;
+                        let $clone = $target.clone();
+                        let cloneId = $target.attr('id') + '-clone';
+                        $clone
+                            .attr('id', cloneId)
+                            .addClass('is-clone');
 
-                                // Next step button
-                                $('#next-step').off('click').on('click', function(e) {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    self.goToNextStep();
-                                });
+                        $clone.css({
+                            position: 'absolute',
+                            top: pos.top,
+                            left: pos.left,
+                            width: $target.outerWidth(),
+                            height: $target.outerHeight(),
+                            zIndex: 1002
+                        });
 
-                                // Previous step button
-                                $('#prev-step').off('click').on('click', function(e) {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    self.goToPreviousStep();
-                                });
+                        $('body').append($clone);
 
-                                // Skip button
-                                $('.skip-tutorial').off('click').on('click', function() {
-                                    self.closeTutorial();
-                                });
-                            },
+                        return $clone;
+                    },
 
-                            addProductToCart: function() {
-                                const key = '24-WB04-Clicked';
+                    removeClones: function() {
+                        $('.is-clone').remove();
+                    },
 
-                                if (localStorage.getItem(key) === 'true') {
-                                    console.log('Already clicked before, skipping...');
-                                    return;
-                                }
+                    // ========== EVENT HANDLERS ==========
+                    bindEvents: function() {
+                        const self = this;
 
-                                const $form = $('form[data-role="tocart-form"][data-product-sku="24-WB04"]');
-                                if ($form.length) {
-                                    const $formKey = $form.find('input[name="form_key"]').val();
-                                    if (!$formKey) {
-                                        console.warn('No valid form_key found, skipping');
-                                        return;
-                                    }
+                        // Multi-flow buttons
+                        $('.start-flow').on('click', function() {
+                            self.startFlow($(this).data('type'));
+                        });
 
-                                    const $button = $form.find('button.tocart.primary');
-                                    if ($button.length) {
-                                        $button.trigger('click');
-                                        localStorage.setItem(key, 'true');
-                                        console.log('Clicked Add to Cart for Push It Messenger Bag');
-                                    }
-                                }
-                            },
+                        // Single flow button
+                        $('#start-tutorial').on('click', function() {
+                            self.startSingleFlow();
+                        });
 
-                            observeDomChanges: function($target) {
-                                const self = this;
-                                const targetNode = document.body;
-                                const config = { childList: true, subtree: true };
+                        // Previous step trong end box
+                        $('#prev-last-step').on('click', function() {
+                            self.goToPreviousFromEnd();
+                        });
 
-                                let debounceTimer;
-                                const observer = new MutationObserver(() => {
-                                    self.updateTooltipPosition();
+                        // Skip tutorial buttons
+                        $('.skip-tutorial').on('click', function() {
+                            self.closeTutorial();
+                        });
 
-                                    if ($target.length) {
-                                        clearTimeout(debounceTimer);
-                                        debounceTimer = setTimeout(() => {
-                                            self.waitForPageStable(function() {
-                                                if ($target.length && !self.isInViewport($target)) {
-                                                    self.animateBody($target);
-                                                }
-                                            });
-                                        }, 300);
-                                    }
-                                });
+                        // Window events
+                        $(window).on('resize scroll', function() {
+                            self.updateTooltipPosition();
+                        });
+                    },
 
-                                observer.observe(targetNode, config);
-                                this.domObserver = observer;
-                            },
+                    bindTooltipEvents: function($tooltip) {
+                        const self = this;
 
-                            // ========== HELPER METHODS ==========
-                            handleTrigger: function(step) {
-                                if (step.trigger && step.trigger !== 'none') {
-                                    const $trigger = $(step.trigger);
-                                    if ($trigger.length) {
-                                        $trigger.trigger('click');
-                                    }
-                                }
-                            },
+                        // Next step button
+                        $('#next-step').off('click').on('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            self.goToNextStep();
+                        });
 
-                            handleDemoAutoLogin: function() {
-                                const self = this;
-                                const formKey = $('.form-customer-login [name="form_key"]').val();
+                        // Previous step button
+                        $('#prev-step').off('click').on('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            self.goToPreviousStep();
+                        });
 
-                                $.ajax({
-                                    url: window.location.origin + '/customer/ajax/login',
-                                    type: 'POST',
-                                    data: JSON.stringify({
-                                        username: 'roni_cost@example.com',
-                                        password: 'roni_cost3@example.com',
-                                        form_key: formKey
-                                    }),
-                                    success: function(resp) {
-                                        self.startTutorialFlow();
-                                    },
-                                    error: function() {
-                                        alert('Login failed.');
-                                    }
-                                });
-                            },
+                        // Skip button
+                        $('.skip-tutorial').off('click').on('click', function() {
+                            self.closeTutorial();
+                        });
+                    },
 
-                            waitForPageStable: function(callback, timeout = 4000) {
-                                let lastHeight = 0;
-                                let stableCount = 0;
-                                const requiredStableCount = 10;
-                                const start = Date.now();
+                    addProductToCart: function() {
+                        const key = '24-WB04-Clicked';
 
-                                $('body').trigger('processStart');
+                        if (localStorage.getItem(key) === 'true') {
+                            console.log('Already clicked before, skipping...');
+                            return;
+                        }
 
-                                const checkStability = setInterval(() => {
-                                    const currentHeight = document.body.scrollHeight;
-
-                                    if (currentHeight === lastHeight) {
-                                        stableCount++;
-                                    } else {
-                                        stableCount = 0;
-                                        lastHeight = currentHeight;
-                                    }
-
-                                    if (stableCount >= requiredStableCount) {
-                                        clearInterval(checkStability);
-                                        $('body').trigger('processStop');
-                                        setTimeout(callback, 200);
-                                    } else if (Date.now() - start > timeout) {
-                                        clearInterval(checkStability);
-                                        $('body').trigger('processStop');
-                                        console.warn('Page stability timeout, proceeding anyway');
-                                        callback();
-                                    }
-                                }, 100);
-                            },
-
-                            updateTooltipPosition: function() {
-                                const $tooltip = $('.tutorial-tooltip');
-                                const $target = $('.tutorial-highlight');
-
-                                if ($target.length && $target.is(':visible') && $tooltip.length) {
-                                    const step = this.steps[this.currentStep];
-                                    if (step) {
-                                        this.calculateTooltipPosition($target.offset(), step.position || 'bottom', $tooltip, $target);
-                                    }
-                                }
-                            },
-
-                            animateBody: function($target) {
-                                const self = this;
-                                var posBonus = 50;
-
-                                $('html,body').animate({
-                                    scrollTop: $target.offset().top - 150 - posBonus}, 500
-                                );
-                            },
-
-                            isInViewport: function($el) {
-                                const el = $el[0];
-                                const rect = el.getBoundingClientRect();
-                                return (
-                                    rect.top >= 0 &&
-                                    rect.left >= 0 &&
-                                    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-                                    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-                                );
+                        const $form = $('form[data-role="tocart-form"][data-product-sku="24-WB04"]');
+                        if ($form.length) {
+                            const $formKey = $form.find('input[name="form_key"]').val();
+                            if (!$formKey) {
+                                console.warn('No valid form_key found, skipping');
+                                return;
                             }
-                        };
 
-                        // ========== INITIALIZE TUTORIAL ==========
-                        FrontendTutorial.init();
-                    });
-                });
-            </script>
-        </div>
-    </div>
+                            const $button = $form.find('button.tocart.primary');
+                            if ($button.length) {
+                                $button.trigger('click');
+                                localStorage.setItem(key, 'true');
+                                console.log('Clicked Add to Cart for Push It Messenger Bag');
+                            }
+                        }
+                    },
 
+                    observeDomChanges: function($target) {
+                        const self = this;
+                        const targetNode = document.body;
+                        const config = { childList: true, subtree: true };
 
+                        let debounceTimer;
+                        const observer = new MutationObserver(() => {
+                            self.updateTooltipPosition();
 
+                            if ($target.length) {
+                                clearTimeout(debounceTimer);
+                                debounceTimer = setTimeout(() => {
+                                    self.waitForPageStable(function() {
+                                        if ($target.length && !self.isInViewport($target)) {
+                                            self.animateBody($target);
+                                        }
+                                    });
+                                }, 300);
+                            }
+                        });
+
+                        observer.observe(targetNode, config);
+                        this.domObserver = observer;
+                    },
+
+                    waitForPageStable: function(callback, timeout = 4000) {
+                        let lastHeight = 0;
+                        let stableCount = 0;
+                        const requiredStableCount = 10;
+                        const start = Date.now();
+
+                        $('body').trigger('processStart');
+
+                        const checkStability = setInterval(() => {
+                            const currentHeight = document.body.scrollHeight;
+
+                            if (currentHeight === lastHeight) {
+                                stableCount++;
+                            } else {
+                                stableCount = 0;
+                                lastHeight = currentHeight;
+                            }
+
+                            if (stableCount >= requiredStableCount) {
+                                clearInterval(checkStability);
+                                $('body').trigger('processStop');
+                                setTimeout(callback, 200);
+                            } else if (Date.now() - start > timeout) {
+                                clearInterval(checkStability);
+                                $('body').trigger('processStop');
+                                console.warn('Page stability timeout, proceeding anyway');
+                                callback();
+                            }
+                        }, 100);
+                    },
+
+                    // ========== HELPER METHODS ==========
+                    handleTrigger: function(step) {
+                        if (step.trigger && step.trigger !== 'none') {
+                            const $trigger = $(step.trigger);
+                            if ($trigger.length) {
+                                $trigger.trigger('click');
+                            }
+                        }
+                    },
+
+                    triggerCloseExtraToolbar:function() {
+                        const $closeBtn = $('.mp-gtm-toolbar-extra .btn-close .action.close');
+
+                        if ($closeBtn.length) {
+                            $closeBtn.trigger('click');
+                        }
+                    },
+
+                    handleDemoAutoLogin: function() {
+                        const self = this;
+                        const formKey = $('.form-customer-login [name="form_key"]').val();
+
+                        $.ajax({
+                            url: window.location.origin + '/customer/ajax/login',
+                            type: 'POST',
+                            data: JSON.stringify({
+                                username: 'roni_cost@example.com',
+                                password: 'roni_cost3@example.com',
+                                form_key: formKey
+                            }),
+                            success: function(resp) {
+                                self.startTutorialFlow();
+                            },
+                            error: function() {
+                                alert('Login failed.');
+                            }
+                        });
+                    },
+
+                    updateTooltipPosition: function() {
+                        const $tooltip = $('.tutorial-tooltip');
+                        const $target = $('.tutorial-highlight');
+
+                        if ($target.length && $target.is(':visible') && $tooltip.length) {
+                            const step = this.steps[this.currentStep];
+                            if (step) {
+                                this.calculateTooltipPosition($target.offset(), step.position || 'bottom', $tooltip, $target);
+                            }
+                        }
+                    },
+
+                    animateBody: function($target) {
+                        var posBonus = 50;
+
+                        $('html,body').animate({
+                            scrollTop: $target.offset().top - 150 - posBonus}, 500
+                        );
+                    },
+
+                    isInViewport: function($el) {
+                        const el = $el[0];
+                        const rect = el.getBoundingClientRect();
+                        return (
+                            rect.top >= 0 &&
+                            rect.left >= 0 &&
+                            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+                        );
+                    }
+                };
+
+                // ========== INITIALIZE TUTORIAL ==========
+                FrontendTutorial.init();
+            });
+        });
+    </script>
     <!-- STYLE -->
     <style>
         .tutorial-overlay {
@@ -623,7 +683,7 @@ $hasRegistered = !empty($stepsRegister);
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, .7);
-            z-index: 99;
+            z-index: 999;
         }
 
         .popup-container {
@@ -703,11 +763,12 @@ $hasRegistered = !empty($stepsRegister);
             display: grid;
             font-size: 14px;
         }
-
         .welcome-title a, .welcome-content a {
             color: #01007F;
         }
-
+        .welcome-content ul li {
+            list-style-type: disc;
+        }
         .mp-center {
             text-align: center;
             padding: 25px 0;
@@ -786,6 +847,10 @@ $hasRegistered = !empty($stepsRegister);
         .tutorial-highlight-60w {
             width: 60px !important;
         }
+        .position-fixed {
+            position: fixed !important;
+        }
+
         #step-counter {
             color: #1E2022;
         }
