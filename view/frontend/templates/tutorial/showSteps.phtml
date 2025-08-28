@@ -275,7 +275,18 @@ $hasRegistered = !empty($stepsRegister);
                                 const self = this;
 
                                 if ($target.length) {
-                                    $target.addClass('tutorial-highlight');
+                                    if (this.currentStep === 0) {
+                                        const $wrapper = $('<div class="tutorial-highlight-wrapper"></div>');
+                                        $target.wrap($wrapper);
+                                        $target.parent().addClass('tutorial-highlight');
+                                        $target.parent().addClass('tutorial-highlight-extend');
+                                        $('<style id="custom-breadcrumb-style">.breadcrumbs { z-index: 999; width: 65% !important; background: #FFF }</style>').appendTo('head');
+                                    } else {
+                                        $target.addClass('tutorial-highlight');
+                                        if (this.currentStep === 3) {
+                                            $target.addClass('tutorial-highlight-60w');
+                                        }
+                                    }
                                     this.animateBody($target);
                                 } else {
                                     this.waitForPageStable(function() {
@@ -298,6 +309,9 @@ $hasRegistered = !empty($stepsRegister);
                                 if (this.currentStep < this.steps.length - 1) {
                                     this.currentStep++;
                                     this.showStep(this.currentStep);
+                                    if (this.currentStep === 1) {
+                                        $('#custom-breadcrumb-style').remove();
+                                    }
                                 } else {
                                     this.finishTutorial();
                                 }

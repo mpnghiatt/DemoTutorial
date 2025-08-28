@@ -228,6 +228,15 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                             let leftPosBonus = 0,
                                 leftTopPosBonus = 0;
 
+                            if (currentStep === 16) {
+                                leftPosBonus = -330;
+                                leftTopPosBonus = -275;
+                            }
+                            if (currentStep === 17) {
+                                leftPosBonus = -330;
+                                leftTopPosBonus = -605;
+                            }
+
                             $tooltip.css({
                                 top: offset.top + targetHeight / 2 - tooltipHeight / 2 + leftTopPosBonus,
                                 left: offset.left - 10 - targetWidth / 2 - tooltipWidth / 2 - leftPosBonus,
@@ -238,7 +247,9 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         case 'bottom':
                         default:
                             let bottomPosBonus = 0;
-
+                            if (currentStep === 13) {
+                                bottomPosBonus = 1210;
+                            }
                             $tooltip.css({
                                 top: offset.top + targetHeight + 30 + bottomPosBonus,
                                 left: offset.left,
@@ -278,7 +289,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                 }
 
                 function updateTooltipPositionAfterDemoNavOff() {
-                    if ($('#mpdemo-content').is(':visible')) return;
+                    if ((currentStep !== 16 || currentStep !== 17) && $('#mpdemo-content').is(':visible')) return;
                     const $tooltip     = $('.tutorial-tooltip');
                     const $tooltipLeft = $('.tutorial-tooltip-left');
                     const $target      = $('.tutorial-highlight');
@@ -287,6 +298,13 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         const step = steps[currentStep];
                         if (step) {
                             let offset = $target.offset();
+
+                            if (currentStep === 16 || currentStep === 17) {
+                                offset = {
+                                    top: offset.top,
+                                    left: offset.left + 110
+                                };
+                            }
 
                             if ($tooltip.length) {
                                 tooltipPositioning(offset, step.position, $tooltip, $target);
@@ -444,6 +462,9 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         $('<style>.tutorial-tooltip:before { left: 4% !important; }</style>').appendTo('head');
                     } else {
                         $target.addClass('tutorial-highlight');
+                        if (currentStep === 8) {
+                            $target.addClass('mg-top-24');
+                        }
                     }
                 }
 
@@ -487,8 +508,12 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     applyHighlighting($target);
 
 
-                    scrollToElement($target, 300);
+                    if (currentStep === 13) {
+                        scrollToElement($target, -1000);
+                    } else {
+                        scrollToElement($target, 300);
 
+                    }
                     // Scroll to target element
 
                     // Create and position tooltip
@@ -535,6 +560,10 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         handleTrigger(step);
                     }
 
+                    if (currentStep === 8) {
+                        closeReportPopup();
+                    }
+
                     if (currentStep < steps.length - 1) {
                         currentStep++;
                         saveCurrentStep(currentStep);
@@ -554,6 +583,10 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                 function handlePreviousStep(step) {
                     if (step.trigger) {
                         handleTrigger(step);
+                    }
+
+                    if (currentStep === 8) {
+                        closeReportPopup();
                     }
 
                     if (currentStep > 0) {
@@ -579,6 +612,12 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     $('.skip-tutorial').off('click').on('click', closeTutorial);
                 }
 
+                function closeReportPopup() {
+                    $("h1.modal-title:contains('Brand Revenue Report')")
+                        .siblings(".action-close")
+                        .trigger("click");
+                }
+
                 // ==================== MAIN TUTORIAL FUNCTIONS ====================
 
                 /**
@@ -588,6 +627,9 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     markTutorialAsSkipped();
                     cleanupTutorialUI();
                     skipTutorial();
+                    if (currentStep === 8) {
+                        closeReportPopup();
+                    }
                 }
 
                 /**
