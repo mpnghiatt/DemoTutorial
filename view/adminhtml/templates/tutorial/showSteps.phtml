@@ -105,7 +105,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     TUTORIAL_STEP: 'tutorialStep'
                 };
 
-                // ==================== UTILITY FUNCTIONS ====================
+                // ==================== HANDLE LOCALSTORAGE FUNCTIONS ====================
 
                 /**
                  * Check if tutorial was previously skipped
@@ -202,11 +202,12 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     const currentOffset = $target.offset();
                     if (!currentOffset) return;
 
-                    const tooltipHeight = $tooltip.outerHeight();
-                    const tooltipWidth = $tooltip.outerWidth();
-                    const targetHeight = $target.outerHeight();
-                    const targetWidth = $target.outerWidth();
-
+                    const tooltipHeight = $tooltip.outerHeight(),
+                          tooltipWidth  = $tooltip.outerWidth(),
+                          targetHeight  = $target.outerHeight(),
+                          targetWidth   = $target.outerWidth(),
+                          top           = 0,
+                          left          = 0;
                     switch (position) {
                         case 'top':
                             $tooltip.css({
@@ -225,22 +226,17 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                             break;
 
                         case 'left':
-                            let leftPosBonus = 0,
-                                leftTopPosBonus = 0;
-
                             $tooltip.css({
-                                top: offset.top + targetHeight / 2 - tooltipHeight / 2 + leftTopPosBonus,
-                                left: offset.left - 10 - targetWidth / 2 - tooltipWidth / 2 - leftPosBonus,
+                                top: offset.top + targetHeight / 2 - tooltipHeight / 2,
+                                left: offset.left - 10 - targetWidth / 2 - tooltipWidth / 2,
                                 position: 'absolute'
                             });
                             break;
 
                         case 'bottom':
                         default:
-                            let bottomPosBonus = 0;
-
                             $tooltip.css({
-                                top: offset.top + targetHeight + 30 + bottomPosBonus,
+                                top: offset.top + targetHeight + 30,
                                 left: offset.left,
                                 position: 'absolute'
                             });
@@ -266,8 +262,8 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                  * Update tooltip position on window resize/scroll
                  */
                 function updateTooltipPosition() {
-                    const $tooltip = $('.tutorial-tooltip, .tutorial-tooltip-left');
-                    const $target = $('.tutorial-highlight');
+                    const $tooltip = $('.tutorial-tooltip, .tutorial-tooltip-left'),
+                          $target  = $('.tutorial-highlight');
 
                     if ($target.length && $target.is(':visible') && $tooltip.length) {
                         const step = steps[currentStep];
@@ -277,7 +273,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     }
                 }
 
-                function updateTooltipPositionAfterDemoNavOff() {
+                function updateTooltipPositionWhenDemoNavOff() {
                     if ($('#mpdemo-content').is(':visible')) return;
                     const $tooltip     = $('.tutorial-tooltip');
                     const $tooltipLeft = $('.tutorial-tooltip-left');
@@ -287,6 +283,10 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         const step = steps[currentStep];
                         if (step) {
                             let offset = $target.offset();
+                                offset = {
+                                    top: offset.top,
+                                    left: offset.left
+                                };
 
                             if ($tooltip.length) {
                                 tooltipPositioning(offset, step.position, $tooltip, $target);
@@ -350,10 +350,10 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                  * @param {number} timeout - Timeout in milliseconds
                  */
                 function waitForPageStable(callback, timeout = 2000) {
-                    let lastHeight = 0;
-                    let stableCount = 0;
-                    const requiredStableCount = 10;
-                    const start = Date.now();
+                    let lastHeight  = 0,
+                        stableCount = 0;
+                    const requiredStableCount = 10,
+                           start              = Date.now();
 
                     $('body').trigger('processStart');
 
@@ -380,8 +380,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     }, 500);
                 }
 
-                // ==================== TRIGGER HANDLING FUNCTIONS ====================
-
+                // ==================== HELPER FUNCTIONS ====================
                 /**
                  * Check if current URL contains specified path
                  * @param {string} path - Path to check
@@ -391,6 +390,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     return window.location.pathname.includes(path);
                 }
 
+                // ==================== TRIGGER HANDLING FUNCTIONS ====================
                 /**
                  * Handle step trigger actions (clicks, expansions, etc.)
                  * @param {Object} step - Step configuration
@@ -486,10 +486,8 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     // Apply highlighting to target element
                     applyHighlighting($target);
 
-
-                    scrollToElement($target, 300);
-
                     // Scroll to target element
+                    scrollToElement($target, 300);
 
                     // Create and position tooltip
                     createAndPositionTooltip(step, index, $target);
@@ -515,15 +513,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     attachStepEventHandlers(step);
                 }
 
-                function removeOverrideOverlay(index) {
-                    if (index === 8) {
-                        $('#tutorial-overlay, #popup-container').hide();
-                        $('<style>.modals-overlay { background: rgba(0, 0, 0, 0.7) !important; }</style>').appendTo('head');
-                    } else {
-                        $('#tutorial-overlay, #popup-container').show();
-                    }
-                }
-
                 // ==================== EVENT HANDLER FUNCTIONS ====================
 
                 /**
@@ -539,7 +528,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         currentStep++;
                         saveCurrentStep(currentStep);
                         showStep(currentStep);
-                        updateTooltipPositionAfterDemoNavOff();
                     } else {
                         // Tutorial completed - show end screen
                         cleanupTutorialUI();
@@ -560,7 +548,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         currentStep--;
                         saveCurrentStep(currentStep);
                         showStep(currentStep);
-                        updateTooltipPositionAfterDemoNavOff();
                     }
                 }
 
@@ -633,8 +620,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     } else {
                         renderStepWithoutTarget(step, index);
                     }
-
-                    removeOverrideOverlay(index);
                 }
 
                 /**
@@ -696,7 +681,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
 
                     // Navigation and popup handlers
                     $(document).on('click', 'button.navigation-close', function () {
-                        updateTooltipPositionAfterDemoNavOff();
+                        updateTooltipPositionWhenDemoNavOff();
                     });
                     $(document).on('click', '#show-popup-btn', function () {
                         updateTooltipPosition();
@@ -798,7 +783,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
         .welcome-content {
             display: grid;
         }
-
         .mp-center {
             text-align: center;
         }
@@ -812,7 +796,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
         .tutorial-highlight-box-shadow {
             box-shadow: 0 30px 0 #FFF;
         }
-
         .tutorial-tooltip {
             font-family: 'Outfit';
             color: #000;
@@ -855,7 +838,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
             transform: rotate(90deg);
             top: -25px;
         }
-
         .tutorial-tooltip-left {
             font-family: 'Outfit';
             background: #fff;
@@ -867,7 +849,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
             box-shadow: 0 4px 15px rgba(0, 0, 0, .3);
             max-width: 420px;
         }
-
         .tutorial-tooltip-left:before {
             content: '';
             position: absolute;
@@ -875,17 +856,14 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
             left: 20%;
             border-right-color: #fff;
         }
-
         .tutorial-tooltip-left.left:before {
             transform: rotate(180deg);
             top: 40%;
             left: 99%;
         }
-
         #step-counter {
             color: #1E2022;
         }
-
         .tutorial-highlight-wrapper {
             width: max-content;
         }
