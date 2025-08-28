@@ -45,16 +45,15 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
     <div id="popup-container" class="popup-container" style="display: none;font-family: 'Outfit';min-width: 50%">
         <div id="tutorial-first-box" class="tutorial-box" style="display: none;">
             <span class="welcome-title">
-                <?= /* @noEscape */ __('Welcome to the backend demo of') ?>
+                <?= /* @noEscape */ __('Welcome to the  Backend Demo of the ') ?>
                 <br>
-                <?= /* @noEscape */ __('the Magento 2 ')?>
-                <a href="<?= /* @noEscape */ $exData['live_url'] ?>">
-                    <?= /* @noEscape */ $moduleName ?>
-                </a>
-                <?= /* @noEscape */ __(' extension by Mageplaza ')?>
+                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ __('Magento 2 ') . $moduleName . __(' extension') ?></a>
+                <?= /* @noEscape */ __(' by Mageplaza') ?>
             </span>
             <p class="welcome-content mp-center">
-                <?= /* @noEscape */ __('Let\'s see how your customers\' actions are tracked with Google Tag Manager settings.') ?>
+                <?= /* @noEscape */ __('Let’s see how you can create brand pages, assign products, and customize brand display') ?>
+                <br>
+                <?= /* @noEscape */ __('to enhance your store’s navigation and shopping experience.') ?>
             </p>
             <div class="tutorial-toolbar">
                 <button class="skip-tutorial">Skip</button>
@@ -66,21 +65,16 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
             <span class="welcome-title">
                 <?= /* @noEscape */ __('That\'s the end of the Backend Demo of') ?>
                 <br>
-                <?= /* @noEscape */__('Mageplaza ')?>
                 <a href="<?= /* @noEscape */ $exData['live_url'] ?>">
-                    <?= /* @noEscape */$moduleName ?>
+                    <?= /* @noEscape */ __('Mageplaza ') . $moduleName . __(' extension')?>
                     <br>
                 </a>
             </span>
             <div class="welcome-content">
-                <ul>
-                    <li> <?= /* @noEscape */ __('Do you have any questions?') ?>
-                        <a href="<?= /* @noEscape */ $contactUrl ?>"><?= /* @noEscape */ __(' Contact us') ?></a>
-                    </li>
-                    <li><?= /* @noEscape */ __('View more setting tutorials in this ') ?>
-                        <a href="<?= /* @noEscape */ $guideUrl ?>"> <?= /* @noEscape */ __(' User Guide.') ?> </a>
-                    </li>
-                </ul>
+                <span class="mp-center"><?= __('Check out our ')?>
+                    <a href="<?= $guideUrl?>"><?= __('User Guide')?></a>
+                    <?= __('or contact us if you have any questions.')?>
+                </span>
             </div>
             <div class="tutorial-toolbar">
                 <button class="skip-tutorial">Done</button>
@@ -410,26 +404,26 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     // Handle fieldset expansion triggers
                     if (step.trigger && step.trigger !== 'none' &&
                         ($element.hasClass('section-config') || $element.is('tr')) &&
-                        !($element.find('.section-config.active').length || $element.hasClass('active')) &&
-                        !$('#row_googletagmanager_googletag_ga4').length) {
-                            const $trigger = $(step.trigger);
-                            if (!isExpanded) {
-                                if ($trigger.length) {
+                        !($element.find('.section-config.active').length || $element.hasClass('active'))) {
+
+                        const $trigger = $(step.trigger);
+                        if (!isExpanded) {
+                            if ($trigger.length) {
+                                const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
+                                Fieldset.toggleCollapse($trigger.get(0), baseUrl);
+                            } else {
+                                waitForElement(step.trigger, function ($resolvedTrigger) {
                                     const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
-                                    Fieldset.toggleCollapse($trigger.get(0), baseUrl);
-                                } else {
-                                    waitForElement(step.trigger, function ($resolvedTrigger) {
-                                        const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
-                                        Fieldset.toggleCollapse($resolvedTrigger.get(0), baseUrl);
-                                    });
-                                }
+                                    Fieldset.toggleCollapse($resolvedTrigger.get(0), baseUrl);
+                                });
                             }
+                        }
                     }
                     // Handle general click triggers
                     else if (step.trigger && step.trigger !== 'none') {
                         let target = $(step.trigger);
                         if (target.length && !$element.hasClass('_show')) {
-                            target.get(0).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                            target.trigger('click');
                         } else {
                             $('#entity').val(step.trigger).trigger('change');
                         }
@@ -449,7 +443,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         $target.parent().addClass('tutorial-highlight');
                         $('<style>.tutorial-tooltip:before { left: 4% !important; }</style>').appendTo('head');
                     } else {
-                        resetPadding();
                         $target.addClass('tutorial-highlight');
                     }
                 }
@@ -521,7 +514,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     // Attach event handlers
                     attachStepEventHandlers(step);
                 }
-                // ==================== CHANGE STYLE FUNCTIONS ====================
+
                 function removeOverrideOverlay(index) {
                     if (index === 8) {
                         $('#tutorial-overlay, #popup-container').hide();
@@ -529,25 +522,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     } else {
                         $('#tutorial-overlay, #popup-container').show();
                     }
-                }
-
-                function resetPadding() {
-                    const rowIds = [
-                        '#row_mageplaza_gtm_connections',
-                        '#row_mageplaza_gtm_dimensions',
-                        '#row_mageplaza_gtm_metrics'
-                    ];
-
-                    rowIds.forEach(function(rowId) {
-                        const $row = $(rowId);
-                        if ($row.length) {
-                            const existingEmptyTds = $row.find('td[class="use-default"]').length;
-                            if (existingEmptyTds === 0) {
-                                $row.append('<td class="use-default"></td>');
-                                $row.append('<td class=""></td>');
-                            }
-                        }
-                    });
                 }
 
                 // ==================== EVENT HANDLER FUNCTIONS ====================
@@ -659,6 +633,8 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     } else {
                         renderStepWithoutTarget(step, index);
                     }
+
+                    removeOverrideOverlay(index);
                 }
 
                 /**
@@ -684,7 +660,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         // Resume from saved step
                         currentStep = savedStep;
                         $('#tutorial-overlay, #popup-container').show();
-                        handleTrigger(steps[currentStep]);
                         showStep(currentStep);
                     } else {
                         // Show initial popup
@@ -820,12 +795,8 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
             font-weight: 600;
             margin-bottom: 10px;
         }
-        .welcome-content ul li {
-            list-style-type: disc;
-        }
         .welcome-content {
-            margin-left: 20px;
-            padding: 20px;
+            display: grid;
         }
 
         .mp-center {
