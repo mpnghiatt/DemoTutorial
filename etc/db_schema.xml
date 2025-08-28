@@ -3,7 +3,7 @@
         <column name="step_id" xsi:type="int" nullable="false" identity="true" unsigned="true" comment="Step ID"/>
         <column name="module_name" xsi:type="varchar" length="255" nullable="false" comment="Module Name"/>
         <column name="page" xsi:type="varchar" length="255" nullable="false" comment="Page"/>
-        <column name="element" xsi:type="varchar" length="255" nullable="false" comment="Element Selector"/>
+        <column name="element" xsi:type="text" nullable="false" comment="Element Selector"/>
         <column name="content" xsi:type="text" nullable="false" comment="Step Content"/>
         <column name="notice_position" xsi:type="varchar" length="10" nullable="true" default="bottom" comment="Notice Position (top, right, bottom, left)"/>
         <column name="area" xsi:type="varchar" length="32" nullable="false" default="frontend" comment="Frontend or Backend"/>
