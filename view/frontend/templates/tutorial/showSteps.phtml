@@ -49,14 +49,15 @@ $hasRegistered = !empty($stepsRegister);
         <!-- FIRST BOX -->
         <div id="tutorial-first-box" class="tutorial-box" style="display:none;">
             <span class="welcome-title">
-                <?= /* @noEscape */ __('Welcome to the frontend demo of ') ?>
+                <?= /* @noEscape */ __('Welcome to the Frontend Demo of the') ?>
                 <br>
-                <?= /* @noEscape */ __('the Magento 2 ') ?>
-                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ $moduleName . __(' extension') ?></a>
+                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ __('Magento 2 ') . $moduleName . __(' Extension') ?></a>
                 <?= /* @noEscape */ __(' by Mageplaza') ?>
             </span>
             <p class="welcome-content mp-center lh-20">
-                <?= /* @noEscape */ __('Let\'s see how your customers\' actions are tracked with Google Tag Manager settings.') ?>
+                <?= /* @noEscape */ __('Let\'s explore how your customers will experience Instagram') ?>
+                <br>
+                <?= /* @noEscape */ __('photos and videos displayed on your Magento store!') ?>
             </p>
 
             <?php if ($hasRegistered && $hasUnregistered): ?>
@@ -107,6 +108,7 @@ $hasRegistered = !empty($stepsRegister);
     <script type="text/javascript">
         require(['jquery'], function ($) {
             $(document).ready(function () {
+
                 const FrontendTutorial = {
                     // ========== CONSTANTS ==========
                     STORAGE_KEYS: {
@@ -202,11 +204,11 @@ $hasRegistered = !empty($stepsRegister);
                     },
 
                     closeTutorial: function() {
-                        this.removeClones();
                         localStorage.setItem(this.STORAGE_KEYS.SKIPPED, 'true');
                         $(this.SELECTORS.POPUP_CONTAINER + ',' + this.SELECTORS.TUTORIAL_OVERLAY).fadeOut();
                         $('.tutorial-highlight').removeClass('tutorial-highlight');
                         $('.tutorial-tooltip').remove();
+                        this.closeMfpPopup();
                     },
 
                     // ========== FLOW MANAGEMENT ==========
@@ -249,19 +251,35 @@ $hasRegistered = !empty($stepsRegister);
                             return;
                         }
 
-                        this.waitForTriggerAndClick(step, () => {
-                            this.prepareStepUI(step);
+                        this.handleTrigger(step);
+                        this.prepareStepUI(step);
 
-                            const $target = $(step.element);
-                            this.highlightTarget($target);
+                        let $target = $(step.element);
 
-                            const $tooltip = this.renderTooltip(step, idx);
-                            this.positionTooltip($tooltip, $target, step);
+                        if (step.element === 'h3:contains("Instagram Feed")') {
+                            $target = $(step.element).closest('.mpinstagramfeed-container');
+                        }
 
-                            this.bindTooltipEvents($tooltip);
+                        if (step.element === 'h3:contains("Instagram Feed 2")') {
+                            $target = $(step.element).closest('.mpinstagramfeed-container');
+                        }
 
-                            $(this.SELECTORS.PAYPAL_BUTTON).css({'position': 'relative', 'z-index': '99'});
-                        });
+                        this.highlightTarget($target);
+                        if (![1,2,8].includes(this.currentStep)) {
+                            this.observeDomChanges($target);
+                        }
+
+                        const $tooltip = this.renderTooltip(step, idx);
+                        this.positionTooltip($tooltip, $target, step);
+
+                        this.bindTooltipEvents($tooltip);
+                        if (this.currentStep === 1) {
+                            const self = this;
+                            setTimeout(function(){
+                                self.addProductToCart();
+                            }, 100);
+                        }
+                        $(this.SELECTORS.PAYPAL_BUTTON).css({'position': 'relative', 'z-index': '99'});
                     },
 
                     isCorrectUrl: function(stepUrl) {
@@ -278,13 +296,20 @@ $hasRegistered = !empty($stepsRegister);
                         $('.tutorial-tooltip').remove();
                     },
 
-                    highlightTarget: function($target) {
+                    highlightTarget: function ($target) {
                         const self = this;
 
                         if ($target.length) {
                             $target.addClass('tutorial-highlight');
+                            if (this.currentStep === 1) {
+                                $target.addClass('height-510');
+                            }
+                            if (this.currentStep === 8) {
+                                this.removeMfpBg();
+                            }
+                            this.animateBody($target);
                         } else {
-                            this.waitForPageStable(function() {
+                            this.waitForPageStable(function () {
                                 const $retarget = $(self.steps[self.currentStep].element);
                                 if ($retarget.length) {
                                     $retarget.addClass('tutorial-highlight');
@@ -293,14 +318,14 @@ $hasRegistered = !empty($stepsRegister);
                             });
                         }
 
-                                if ($target.find('.tutorial-overlay').length) {
-                                    $('.tutorial-overlay').insertAfter($target);
-                                }
-                            },
+                        if ($target.find('.tutorial-overlay').length) {
+                            $('.tutorial-overlay').insertAfter($target);
+                        }
+                    },
                             // ========== NAVIGATION METHODS ==========
-                            goToNextStep: function() {
-                                this.handleTrigger(this.steps[this.currentStep]);
-
+                    goToNextStep: function () {
+                        this.handleTrigger(this.steps[this.currentStep]);
+                        this.closeMfpPopup();
                         if (this.currentStep < this.steps.length - 1) {
                             this.currentStep++;
                             this.showStep(this.currentStep);
@@ -309,9 +334,9 @@ $hasRegistered = !empty($stepsRegister);
                         }
                     },
 
-                            goToPreviousStep: function() {
-                                this.handleTrigger(this.steps[this.currentStep]);
-
+                    goToPreviousStep: function () {
+                        this.handleTrigger(this.steps[this.currentStep]);
+                        this.closeMfpPopup();
                         if (this.currentStep > 0) {
                             this.currentStep--;
                             this.showStep(this.currentStep);
@@ -326,7 +351,6 @@ $hasRegistered = !empty($stepsRegister);
                     },
 
                     finishTutorial: function() {
-                        this.removeClones();
                         $('.tutorial-tooltip').remove();
                         $('.tutorial-highlight').removeClass('tutorial-highlight');
                         $(this.SELECTORS.END_BOX).fadeIn();
@@ -407,9 +431,12 @@ $hasRegistered = !empty($stepsRegister);
                                 break;
 
                             default: // bottom
+                                if (this.currentStep === 5) {
+                                    posLeftBonus = 1200;
+                                }
                                 $tooltip.css({
                                     top: offset.top + $target.outerHeight() + 30,
-                                    left: offset.left
+                                    left: offset.left + posLeftBonus
                                 });
                         }
                     },
@@ -484,7 +511,7 @@ $hasRegistered = !empty($stepsRegister);
                             }
 
                             const $button = $form.find('button.tocart.primary');
-                            if ($button.length) {
+                            if ($button.length) {``
                                 $button.trigger('click');
                                 localStorage.setItem(key, 'true');
                                 console.log('Clicked Add to Cart for Push It Messenger Bag');
@@ -518,6 +545,7 @@ $hasRegistered = !empty($stepsRegister);
                     },
 
                     waitForPageStable: function(callback, timeout = 4000) {
+                        if ([1,8].includes(this.currentStep)) return;
                         let lastHeight = 0;
                         let stableCount = 0;
                         const requiredStableCount = 10;
@@ -592,7 +620,11 @@ $hasRegistered = !empty($stepsRegister);
                     },
 
                     animateBody: function($target) {
-                        var posBonus = 50;
+                        let posBonus = 50;
+
+                        if (![1,8].includes(this.currentStep)) {
+                            posBonus = -100;
+                        }
 
                         $('html,body').animate({
                             scrollTop: $target.offset().top - 150 - posBonus}, 500
@@ -608,6 +640,14 @@ $hasRegistered = !empty($stepsRegister);
                             rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
                             rect.right <= (window.innerWidth || document.documentElement.clientWidth)
                         );
+                    },
+                    // ========== STYLE FUNCTION ==========
+                    removeMfpBg: function() {
+                        $('.mfp-bg').remove();
+                        $('.mfp-wrap').addClass('zIndex-1000');
+                    },
+                    closeMfpPopup: function() {
+                        $.magnificPopup.close();
                     }
                 };
 
@@ -625,7 +665,7 @@ $hasRegistered = !empty($stepsRegister);
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, .7);
-            z-index: 999;
+            z-index: 998;
         }
 
         .popup-container {
@@ -735,7 +775,7 @@ $hasRegistered = !empty($stepsRegister);
         }
 
         .tutorial-highlight {
-            z-index: 1002;
+            z-index: 999;
             position: relative;
             padding: 5px;
             box-shadow: 0 0 0 4px #fff;
@@ -792,7 +832,12 @@ $hasRegistered = !empty($stepsRegister);
         .position-fixed {
             position: fixed !important;
         }
-
+        .height-510 {
+            height: 510px !important
+        }
+        .zIndex-1000 {
+            z-index: 1000 !important;
+        }
         #step-counter {
             color: #1E2022;
         }
