@@ -380,6 +380,31 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     }, 500);
                 }
 
+                function observeDomChanges($target) {
+                    const self = this;
+                    const targetNode = document.body;
+                    const config = { childList: true, subtree: true };
+
+                    let debounceTimer;
+                    const observer = new MutationObserver(() => {
+                        self.updateTooltipPosition();
+
+                        if ($target.length) {
+                            clearTimeout(debounceTimer);
+                            debounceTimer = setTimeout(() => {
+                                self.waitForPageStable(function() {
+                                    if ($target.length && !self.isInViewport($target)) {
+                                        self.scrollToElement($target);
+                                    }
+                                });
+                            }, 300);
+                        }
+                    });
+
+                    observer.observe(targetNode, config);
+                    this.domObserver = observer;
+                }
+
                 // ==================== HELPER FUNCTIONS ====================
                 /**
                  * Check if current URL contains specified path
@@ -436,7 +461,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                  * Apply highlighting to target element
                  * @param {jQuery} $target - Element to highlight
                  */
-                function applyHighlighting($target) {
+                function highlightTarget($target) {
                     if ($target.is('button') || $target.is('[type="button"]')) {
                         const $wrapper = $('<div class="tutorial-highlight-wrapper"></div>');
                         $target.wrap($wrapper);
@@ -484,7 +509,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     }
 
                     // Apply highlighting to target element
-                    applyHighlighting($target);
+                    highlightTarget($target);
 
                     // Scroll to target element
                     scrollToElement($target, 300);
