@@ -99,520 +99,532 @@ $hasRegistered = !empty($stepsRegister);
                 <button class="skip-tutorial">Done</button>
                 <button id="prev-last-step">Back</button>
             </div>
-            <script type="text/javascript">
-                require(['jquery'], function ($) {
-                    $(document).ready(function () {
-                        const FrontendTutorial = {
-                            // ========== CONSTANTS ==========
-                            STORAGE_KEYS: {
-                                SKIPPED: 'frontendTutorialSkipped',
-                                CURRENT_STEP: 'frontendTutorialStep',
-                                FLOW_TYPE: 'tutorialFlow'
-                            },
-
-                            SELECTORS: {
-                                SECTIONS_NAV: '.sections.nav-sections',
-                                SEARCH_BLOCK: '.block.block-search',
-                                TUTORIAL_OVERLAY: '#tutorial-overlay',
-                                POPUP_CONTAINER: '#popup-container',
-                                FIRST_BOX: '#tutorial-first-box',
-                                END_BOX: '#tutorial-end-box',
-                                PAYPAL_BUTTON: 'div#paypal-smart-button'
-                            },
-
-                            // ========== STATE VARIABLES ==========
-                            multiFlow: <?= json_encode($hasRegistered && $hasUnregistered) ?>,
-                            allSteps: {
-                                registered: <?= json_encode(array_values(array_map(function ($s) {
-                                    return [
-                                        'title' => $s['module_name'],
-                                        'content' => $s['content'],
-                                        'element' => $s['element'],
-                                        'url' => $s['page'],
-                                        'trigger' => $s['trigger'],
-                                        'position' => $s['notice_position'] ?? 'bottom'
-                                    ];
-                                }, $stepsRegister))); ?>,
-                                unregistered: <?= json_encode(array_values(array_map(function ($s) {
-                                    return [
-                                        'title' => $s['module_name'],
-                                        'content' => $s['content'],
-                                        'element' => $s['element'],
-                                        'url' => $s['page'],
-                                        'trigger' => $s['trigger'],
-                                        'position' => $s['notice_position'] ?? 'bottom'
-                                    ];
-                                }, $stepsUnregister))); ?>
-                            },
-
-                            steps: [],
-                            currentStep: -1,
-                            type: 'unregistered',
-
-                            // ========== INITIALIZATION ==========
-                            init: function() {
-                                if (this.isSkipped()) return;
-                                this.setupInitialStyles();
-                                this.resumeOrStartTutorial();
-                                this.bindEvents();
-                            },
-
-                            isSkipped: function() {
-                                return localStorage.getItem(this.STORAGE_KEYS.SKIPPED) === 'true';
-                            },
-
-                            setupInitialStyles: function() {
-                                $(this.SELECTORS.SECTIONS_NAV).css('z-index', '1');
-                                $(this.SELECTORS.SEARCH_BLOCK).css('z-index', '1');
-                            },
-
-                            // ========== TUTORIAL FLOW CONTROL ==========
-
-                            resumeOrStartTutorial: function() {
-                                const savedStep = localStorage.getItem(this.STORAGE_KEYS.CURRENT_STEP);
-
-                                if (savedStep !== null) {
-                                    this.resumeTutorial(parseInt(savedStep, 10));
-                                } else {
-                                    this.showFirstPopup();
-                                }
-                            },
-
-                            resumeTutorial: function(savedStep) {
-                                this.currentStep = savedStep;
-                                this.type = this.multiFlow ?
-                                    localStorage.getItem(this.STORAGE_KEYS.FLOW_TYPE) || 'unregistered' :
-                                    'unregistered';
-                                this.steps = this.allSteps[this.type] || [];
-
-                                $(this.SELECTORS.TUTORIAL_OVERLAY + ',' + this.SELECTORS.POPUP_CONTAINER).show();
-                                this.showStep(this.currentStep);
-                            },
-
-                            showFirstPopup: function() {
-                                if (this.isSkipped()) return;
-                                $(this.SELECTORS.TUTORIAL_OVERLAY + ',' +
-                                    this.SELECTORS.POPUP_CONTAINER + ',' +
-                                    this.SELECTORS.FIRST_BOX).fadeIn();
-                            },
-
-                            closeTutorial: function() {
-                                localStorage.setItem(this.STORAGE_KEYS.SKIPPED, 'true');
-                                $(this.SELECTORS.POPUP_CONTAINER + ',' + this.SELECTORS.TUTORIAL_OVERLAY).fadeOut();
-                                $('.tutorial-highlight').removeClass('tutorial-highlight');
-                                $('.tutorial-tooltip').remove();
-                            },
-
-                            // ========== FLOW MANAGEMENT ==========
-                            startFlow: function(type) {
-                                this.type = type;
-                                this.steps = this.allSteps[type] || [];
-                                this.currentStep = 0;
-                                localStorage.setItem(this.STORAGE_KEYS.CURRENT_STEP, this.currentStep);
-                                localStorage.setItem(this.STORAGE_KEYS.FLOW_TYPE, type);
-
-                                if (type === 'registered') {
-                                    this.handleDemoAutoLogin();
-                                } else {
-                                    this.startTutorialFlow();
-                                }
-                            },
-
-                            startSingleFlow: function() {
-                                this.type = 'unregistered';
-                                this.steps = this.allSteps[this.type] || [];
-                                this.currentStep = 0;
-                                localStorage.setItem(this.STORAGE_KEYS.CURRENT_STEP, this.currentStep);
-                                this.startTutorialFlow();
-                            },
-
-                            startTutorialFlow: function() {
-                                $(this.SELECTORS.FIRST_BOX).fadeOut(() => {
-                                    this.showStep(this.currentStep);
-                                });
-                            },
-
-                            // ========== STEP MANAGEMENT ==========
-                            showStep: function(idx) {
-                                if (idx < 0 || idx >= this.steps.length) return;
-
-                                const step = this.steps[idx];
-
-                                if (!this.isCorrectUrl(step.url)) {
-                                    this.navigateToStep(idx, step.url);
-                                    return;
-                                }
-
-                                this.handleTrigger(step);
-                                this.prepareStepUI(step);
-
-                                const $target = $(step.element);
-                                this.highlightTarget($target);
-
-                                const $tooltip = this.renderTooltip(step, idx);
-                                this.positionTooltip($tooltip, $target, step);
-
-                                this.bindTooltipEvents($tooltip);
-
-                                $(this.SELECTORS.PAYPAL_BUTTON).css({'position': 'relative', 'z-index': '99'});
-                            },
-
-                            isCorrectUrl: function(stepUrl) {
-                                return window.location.pathname + window.location.search === stepUrl;
-                            },
-
-                            navigateToStep: function(stepIndex, url) {
-                                localStorage.setItem(this.STORAGE_KEYS.CURRENT_STEP, stepIndex);
-                                window.location.href = url;
-                            },
-
-                            prepareStepUI: function(step) {
-                                $('.tutorial-highlight').removeClass('tutorial-highlight');
-                                $('.tutorial-tooltip').remove();
-                            },
-
-                            highlightTarget: function($target) {
-                                const self = this;
-
-                                if ($target.length) {
-                                    $target.addClass('tutorial-highlight');
-                                    this.animateBody($target);
-                                } else {
-                                    this.waitForPageStable(function() {
-                                        const $retarget = $(self.steps[self.currentStep].element);
-                                        if ($retarget.length) {
-                                            $retarget.addClass('tutorial-highlight');
-                                            self.animateBody($retarget);
-                                        }
-                                    });
-                                }
-
-                                if ($target.find('.tutorial-overlay').length) {
-                                    $('.tutorial-overlay').insertAfter($target);
-                                }
-                            },
-                            // ========== NAVIGATION METHODS ==========
-                            goToNextStep: function() {
-                                this.handleTrigger(this.steps[this.currentStep]);
-
-                                if (this.currentStep < this.steps.length - 1) {
-                                    this.currentStep++;
-                                    this.showStep(this.currentStep);
-                                } else {
-                                    this.finishTutorial();
-                                }
-                            },
-
-                            goToPreviousStep: function() {
-                                this.handleTrigger(this.steps[this.currentStep]);
-
-                                if (this.currentStep > 0) {
-                                    this.currentStep--;
-                                    this.showStep(this.currentStep);
-                                }
-                            },
-
-                            goToPreviousFromEnd: function() {
-                                this.currentStep = this.steps.length - 1;
-                                $(this.SELECTORS.END_BOX).fadeOut(() => {
-                                    this.showStep(this.currentStep);
-                                });
-                            },
-
-                            finishTutorial: function() {
-                                $('.tutorial-tooltip').remove();
-                                $('.tutorial-highlight').removeClass('tutorial-highlight');
-                                $(this.SELECTORS.END_BOX).fadeIn();
-                                $(this.SELECTORS.TUTORIAL_OVERLAY).insertAfter(this.SELECTORS.POPUP_CONTAINER);
-                            },
-
-                            // ========== TOOLTIP MANAGEMENT ==========
-                            renderTooltip: function(step, index) {
-                                const $tooltip = $('<div class="tutorial-tooltip"></div>');
-
-                                const tooltipHTML = `
-                    <div class="content-title">${step.title}</div>
-                    <div class="step-content">${step.content}</div>
-                    <div class="tutorial-toolbar">
-                        <button class="skip-tutorial">Skip</button>
-                        <span id="step-counter">${index + 1} of ${this.steps.length}</span>
-                        <div>
-                            <button id="prev-step" ${index === 0 ? 'style="display:none;"' : ''}>Back</button>
-                            <button id="next-step" ${index === this.steps.length ? 'style="display:none;"' : ''}>Next</button>
-                        </div>
-                    </div>
-                `;
-
-                                $tooltip.html(tooltipHTML);
-                                $('body').append($tooltip);
-
-                                return $tooltip;
-                            },
-
-                            positionTooltip: function($tooltip, $target, step) {
-                                if ($target.length) {
-                                    $tooltip.addClass(step.position || 'bottom');
-                                    this.calculateTooltipPosition($target.offset(), step.position || 'bottom', $tooltip, $target);
-                                } else {
-                                    this.positionTooltipCenter($tooltip, step);
-                                }
-                            },
-
-                            positionTooltipCenter: function($tooltip, step) {
-                                if (step.position === 'top') {
-                                    $tooltip.css({
-                                        top: $(window).scrollTop() + 20,
-                                        left: ($(window).width() - $tooltip.outerWidth()) / 2
-                                    });
-                                    $tooltip.addClass('bottom');
-                                } else {
-                                    $tooltip.css({
-                                        top: $(window).scrollTop() + ($(window).height() - $tooltip.outerHeight()) / 2,
-                                        left: ($(window).width() - $tooltip.outerWidth()) / 2
-                                    });
-                                }
-                            },
-
-                            calculateTooltipPosition: function(offset, position, $tooltip, $target) {
-                                let posBonus = 30;
-
-                                switch (position) {
-                                    case 'top':
-                                        $tooltip.css({
-                                            top: offset.top - $tooltip.outerHeight() - posBonus,
-                                            left: offset.left
-                                        });
-                                        break;
-
-                                    case 'right':
-                                        $tooltip.css({
-                                            top: offset.top + $target.outerHeight() / 2 - $tooltip.outerHeight() / 2 - posBonus,
-                                            left: offset.left + $target.outerWidth() + 15
-                                        });
-                                        break;
-
-                                    case 'left':
-                                        $tooltip.css({
-                                            top: offset.top + $target.outerHeight() / 2 - $tooltip.outerHeight() / 2,
-                                            left: offset.left - $tooltip.outerWidth() - 30
-                                        });
-                                        break;
-
-                                    default: // bottom
-                                        $tooltip.css({
-                                            top: offset.top + $target.outerHeight() + 30,
-                                            left: offset.left
-                                        });
-                                }
-                            },
-
-                            // ========== EVENT HANDLERS ==========
-                            bindEvents: function() {
-                                const self = this;
-
-                                // Multi-flow buttons
-                                $('.start-flow').on('click', function() {
-                                    self.startFlow($(this).data('type'));
-                                });
-
-                                // Single flow button
-                                $('#start-tutorial').on('click', function() {
-                                    self.startSingleFlow();
-                                });
-
-                                // Previous step trong end box
-                                $('#prev-last-step').on('click', function() {
-                                    self.goToPreviousFromEnd();
-                                });
-
-                                // Skip tutorial buttons
-                                $('.skip-tutorial').on('click', function() {
-                                    self.closeTutorial();
-                                });
-
-                                // Window events
-                                $(window).on('resize scroll', function() {
-                                    self.updateTooltipPosition();
-                                });
-                            },
-
-                            bindTooltipEvents: function($tooltip) {
-                                const self = this;
-
-                                // Next step button
-                                $('#next-step').off('click').on('click', function(e) {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    self.goToNextStep();
-                                });
-
-                                // Previous step button
-                                $('#prev-step').off('click').on('click', function(e) {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    self.goToPreviousStep();
-                                });
-
-                                // Skip button
-                                $('.skip-tutorial').off('click').on('click', function() {
-                                    self.closeTutorial();
-                                });
-                            },
-
-                            addProductToCart: function() {
-                                const key = '24-WB04-Clicked';
-
-                                if (localStorage.getItem(key) === 'true') {
-                                    console.log('Already clicked before, skipping...');
-                                    return;
-                                }
-
-                                const $form = $('form[data-role="tocart-form"][data-product-sku="24-WB04"]');
-                                if ($form.length) {
-                                    const $formKey = $form.find('input[name="form_key"]').val();
-                                    if (!$formKey) {
-                                        console.warn('No valid form_key found, skipping');
-                                        return;
-                                    }
-
-                                    const $button = $form.find('button.tocart.primary');
-                                    if ($button.length) {
-                                        $button.trigger('click');
-                                        localStorage.setItem(key, 'true');
-                                        console.log('Clicked Add to Cart for Push It Messenger Bag');
-                                    }
-                                }
-                            },
-
-                            observeDomChanges: function($target) {
-                                const self = this;
-                                const targetNode = document.body;
-                                const config = { childList: true, subtree: true };
-
-                                let debounceTimer;
-                                const observer = new MutationObserver(() => {
-                                    self.updateTooltipPosition();
-
-                                    if ($target.length) {
-                                        clearTimeout(debounceTimer);
-                                        debounceTimer = setTimeout(() => {
-                                            self.waitForPageStable(function() {
-                                                if ($target.length && !self.isInViewport($target)) {
-                                                    self.animateBody($target);
-                                                }
-                                            });
-                                        }, 300);
-                                    }
-                                });
-
-                                observer.observe(targetNode, config);
-                                this.domObserver = observer;
-                            },
-
-                            // ========== HELPER METHODS ==========
-                            handleTrigger: function(step) {
-                                if (step.trigger && step.trigger !== 'none') {
-                                    const $trigger = $(step.trigger);
-                                    if ($trigger.length) {
-                                        $trigger.trigger('click');
-                                    }
-                                }
-                            },
-
-                            handleDemoAutoLogin: function() {
-                                const self = this;
-                                const formKey = $('.form-customer-login [name="form_key"]').val();
-
-                                $.ajax({
-                                    url: window.location.origin + '/customer/ajax/login',
-                                    type: 'POST',
-                                    data: JSON.stringify({
-                                        username: 'roni_cost@example.com',
-                                        password: 'roni_cost3@example.com',
-                                        form_key: formKey
-                                    }),
-                                    success: function(resp) {
-                                        self.startTutorialFlow();
-                                    },
-                                    error: function() {
-                                        alert('Login failed.');
-                                    }
-                                });
-                            },
-
-                            waitForPageStable: function(callback, timeout = 4000) {
-                                let lastHeight = 0;
-                                let stableCount = 0;
-                                const requiredStableCount = 10;
-                                const start = Date.now();
-
-                                $('body').trigger('processStart');
-
-                                const checkStability = setInterval(() => {
-                                    const currentHeight = document.body.scrollHeight;
-
-                                    if (currentHeight === lastHeight) {
-                                        stableCount++;
-                                    } else {
-                                        stableCount = 0;
-                                        lastHeight = currentHeight;
-                                    }
-
-                                    if (stableCount >= requiredStableCount) {
-                                        clearInterval(checkStability);
-                                        $('body').trigger('processStop');
-                                        setTimeout(callback, 200);
-                                    } else if (Date.now() - start > timeout) {
-                                        clearInterval(checkStability);
-                                        $('body').trigger('processStop');
-                                        console.warn('Page stability timeout, proceeding anyway');
-                                        callback();
-                                    }
-                                }, 100);
-                            },
-
-                            updateTooltipPosition: function() {
-                                const $tooltip = $('.tutorial-tooltip');
-                                const $target = $('.tutorial-highlight');
-
-                                if ($target.length && $target.is(':visible') && $tooltip.length) {
-                                    const step = this.steps[this.currentStep];
-                                    if (step) {
-                                        this.calculateTooltipPosition($target.offset(), step.position || 'bottom', $tooltip, $target);
-                                    }
-                                }
-                            },
-
-                            animateBody: function($target) {
-                                const self = this;
-                                var posBonus = 50;
-
-                                $('html,body').animate({
-                                    scrollTop: $target.offset().top - 150 - posBonus}, 500
-                                );
-                            },
-
-                            isInViewport: function($el) {
-                                const el = $el[0];
-                                const rect = el.getBoundingClientRect();
-                                return (
-                                    rect.top >= 0 &&
-                                    rect.left >= 0 &&
-                                    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-                                    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-                                );
-                            }
-                        };
-
-                        // ========== INITIALIZE TUTORIAL ==========
-                        FrontendTutorial.init();
-                    });
-                });
-            </script>
         </div>
     </div>
+    <script type="text/javascript">
+        require(['jquery'], function ($) {
+            $(window).on('load', function() {
+                // ========== CONSTANTS ==========
+                const STORAGE_KEYS = {
+                    SKIPPED: 'frontendTutorialSkipped',
+                    CURRENT_STEP: 'frontendTutorialStep',
+                    FLOW_TYPE: 'tutorialFlow'
+                };
 
+                const SELECTORS = {
+                    SECTIONS_NAV: '.sections.nav-sections',
+                    SEARCH_BLOCK: '.block.block-search',
+                    TUTORIAL_OVERLAY: '#tutorial-overlay',
+                    POPUP_CONTAINER: '#popup-container',
+                    FIRST_BOX: '#tutorial-first-box',
+                    END_BOX: '#tutorial-end-box',
+                    PAYPAL_BUTTON: 'div#paypal-smart-button'
+                };
 
+                // ========== STATE VARIABLES ==========
+                const multiFlow = <?= json_encode($hasRegistered && $hasUnregistered) ?>;
+                const allSteps = {
+                    registered: <?= json_encode(array_values(array_map(function ($s) {
+                        return [
+                            'title' => $s['module_name'],
+                            'content' => $s['content'],
+                            'element' => $s['element'],
+                            'url' => $s['page'],
+                            'trigger' => $s['trigger'],
+                            'position' => $s['notice_position'] ?? 'bottom'
+                        ];
+                    }, $stepsRegister))); ?>,
+                    unregistered: <?= json_encode(array_values(array_map(function ($s) {
+                        return [
+                            'title' => $s['module_name'],
+                            'content' => $s['content'],
+                            'element' => $s['element'],
+                            'url' => $s['page'],
+                            'trigger' => $s['trigger'],
+                            'position' => $s['notice_position'] ?? 'bottom'
+                        ];
+                    }, $stepsUnregister))); ?>
+                };
+
+                let steps = [];
+                let currentStep = -1;
+                let type = 'unregistered';
+
+                // ========== HANDLE LOCALSTORAGE FUNCTIONS ==========
+                function isSkipped() {
+                    return localStorage.getItem(STORAGE_KEYS.SKIPPED) === 'true';
+                }
+
+                function saveStep(step) {
+                    localStorage.setItem(STORAGE_KEYS.CURRENT_STEP, step);
+                }
+
+                function getSavedStep() {
+                    return localStorage.getItem(STORAGE_KEYS.CURRENT_STEP);
+                }
+
+                function saveFlowType(flowType) {
+                    localStorage.setItem(STORAGE_KEYS.FLOW_TYPE, flowType);
+                }
+
+                function getSavedFlowType() {
+                    return localStorage.getItem(STORAGE_KEYS.FLOW_TYPE);
+                }
+
+                function isCorrectUrl(stepUrl) {
+                    return window.location.pathname + window.location.search === stepUrl;
+                }
+
+                function navigateToStep(stepIndex, url) {
+                    saveStep(stepIndex);
+                    window.location.href = url;
+                }
+
+                function scrollToElement($target) {
+                    $('html, body').animate({
+                        scrollTop: $target.offset().top - 200
+                    }, 500);
+                }
+
+                function isInViewport($el) {
+                    const rect = $el[0].getBoundingClientRect();
+                    return rect.top >= 0 && rect.left >= 0 &&
+                        rect.bottom <= window.innerHeight && rect.right <= window.innerWidth;
+                }
+
+                // ========== UI FUNCTIONS ==========
+                function setupInitialStyles() {
+                    $(SELECTORS.SECTIONS_NAV).css('z-index', '1');
+                    $(SELECTORS.SEARCH_BLOCK).css('z-index', '1');
+                }
+
+                function showOverlay() {
+                    $(SELECTORS.TUTORIAL_OVERLAY + ',' + SELECTORS.POPUP_CONTAINER).show();
+                }
+
+                function hideOverlay() {
+                    $(SELECTORS.POPUP_CONTAINER + ',' + SELECTORS.TUTORIAL_OVERLAY).fadeOut();
+                }
+
+                function showFirstPopup() {
+                    if (isSkipped()) return;
+                    $(SELECTORS.TUTORIAL_OVERLAY + ',' + SELECTORS.POPUP_CONTAINER + ',' + SELECTORS.FIRST_BOX).fadeIn();
+                }
+
+                function cleanupUI() {
+                    $('.tutorial-highlight').removeClass('tutorial-highlight');
+                    $('.tutorial-tooltip').remove();
+                }
+
+                function showEndBox() {
+                    cleanupUI();
+                    $(SELECTORS.END_BOX).fadeIn();
+                    $(SELECTORS.TUTORIAL_OVERLAY).insertAfter(SELECTORS.POPUP_CONTAINER);
+                }
+
+                // ========== TUTORIAL FLOW FUNCTIONS ==========
+                function resumeOrStartTutorial() {
+                    const savedStep = getSavedStep();
+                    if (savedStep !== null) {
+                        resumeTutorial(parseInt(savedStep, 10));
+                    } else {
+                        showFirstPopup();
+                    }
+                }
+
+                function resumeTutorial(savedStep) {
+                    currentStep = savedStep;
+                    type = multiFlow ? getSavedFlowType() || 'unregistered' : 'unregistered';
+                    steps = allSteps[type] || [];
+                    showOverlay();
+                    showStep(currentStep);
+                }
+
+                function startFlow(flowType) {
+                    type = flowType;
+                    steps = allSteps[type] || [];
+                    currentStep = 0;
+                    saveStep(currentStep);
+                    saveFlowType(type);
+
+                    if (type === 'registered') {
+                        handleDemoAutoLogin();
+                    } else {
+                        startTutorialFlow();
+                    }
+                }
+
+                function startSingleFlow() {
+                    type = 'unregistered';
+                    steps = allSteps[type] || [];
+                    currentStep = 0;
+                    saveStep(currentStep);
+                    startTutorialFlow();
+                }
+
+                function startTutorialFlow() {
+                    $(SELECTORS.FIRST_BOX).fadeOut(() => {
+                        showStep(currentStep);
+                    });
+                }
+
+                function closeTutorial() {
+                    localStorage.setItem(STORAGE_KEYS.SKIPPED, 'true');
+                    hideOverlay();
+                    cleanupUI();
+                }
+
+                function handleDemoAutoLogin() {
+                    const formKey = $('.form-customer-login [name="form_key"]').val();
+
+                    $.ajax({
+                        url: window.location.origin + '/customer/ajax/login',
+                        type: 'POST',
+                        data: JSON.stringify({
+                            username: 'roni_cost@example.com',
+                            password: 'roni_cost3@example.com',
+                            form_key: formKey
+                        }),
+                        success: function() {
+                            startTutorialFlow();
+                        },
+                        error: function() {
+                            alert('Login failed.');
+                        }
+                    });
+                }
+
+                // ========== STEP MANAGEMENT FUNCTIONS ==========
+                function showStep(idx) {
+                    if (idx < 0 || idx >= steps.length) return;
+
+                    const step = steps[idx];
+
+                    if (!isCorrectUrl(step.url)) {
+                        navigateToStep(idx, step.url);
+                        return;
+                    }
+
+                    handleTrigger(step);
+                    prepareStepUI();
+
+                    const $target = $(step.element);
+                    highlightTarget($target, step);
+
+                    const $tooltip = createTooltip(step, idx);
+                    positionTooltip($tooltip, $target, step);
+                    bindTooltipEvents();
+
+                    $(SELECTORS.PAYPAL_BUTTON).css({'position': 'relative', 'z-index': '99'});
+                }
+
+                function prepareStepUI() {
+                    cleanupUI();
+                }
+
+                function highlightTarget($target, step) {
+                    if ($target.length) {
+                        $target.addClass('tutorial-highlight');
+                        scrollToElement($target);
+                    } else {
+                        waitForPageStable(function() {
+                            const $retarget = $(step.element);
+                            if ($retarget.length) {
+                                $retarget.addClass('tutorial-highlight');
+                                scrollToElement($retarget);
+                            }
+                        });
+                    }
+
+                    if ($target.find('.tutorial-overlay').length) {
+                        $('.tutorial-overlay').insertAfter($target);
+                    }
+                }
+
+                function goToNextStep() {
+                    handleTrigger(steps[currentStep]);
+
+                    if (currentStep < steps.length - 1) {
+                        currentStep++;
+                        showStep(currentStep);
+                    } else {
+                        showEndBox();
+                    }
+                }
+
+                function goToPreviousStep() {
+                    handleTrigger(steps[currentStep]);
+
+                    if (currentStep > 0) {
+                        currentStep--;
+                        showStep(currentStep);
+                    }
+                }
+
+                function goToPreviousFromEnd() {
+                    currentStep = steps.length - 1;
+                    $(SELECTORS.END_BOX).fadeOut(() => {
+                        showStep(currentStep);
+                    });
+                }
+
+                // ========== POSITIONING FUNCTIONS ==========
+                function createTooltip(step, index) {
+                    const $tooltip = $('<div class="tutorial-tooltip"></div>');
+
+                    const tooltipHTML = `
+            <div class="content-title">${step.title}</div>
+            <div class="step-content">${step.content}</div>
+            <div class="tutorial-toolbar">
+                <button class="skip-tutorial">Skip</button>
+                <span id="step-counter">${index + 1} of ${steps.length}</span>
+                <div>
+                    <button id="prev-step" ${index === 0 ? 'style="display:none;"' : ''}>Back</button>
+                    <button id="next-step">Next</button>
+                </div>
+            </div>
+        `;
+
+                    $tooltip.html(tooltipHTML);
+                    $('body').append($tooltip);
+                    return $tooltip;
+                }
+
+                function positionTooltip($tooltip, $target, step) {
+                    const position = step.position || 'bottom';
+                    $tooltip.addClass(position);
+
+                    if ($target.length) {
+                        tooltipPositioning($tooltip, $target, position);
+                    } else {
+                        positionTooltipCenter($tooltip, position);
+                    }
+                }
+
+                function tooltipPositioning($tooltip, $target, position) {
+                    const offset   = $target.offset(),
+                          posBonus = 30,
+                          top      = 0,
+                          left     = 0;
+
+                    switch (position) {
+                        case 'top':
+                            $tooltip.css({
+                                top: offset.top - $tooltip.outerHeight() - posBonus + top,
+                                left: offset.left + left
+                            });
+                            break;
+
+                        case 'right':
+                            $tooltip.css({
+                                top: offset.top + $target.outerHeight() / 2 - $tooltip.outerHeight() / 2 - posBonus + top,
+                                left: offset.left + $target.outerWidth() + posBonus / 2 + + left
+                            });
+                            break;
+
+                        case 'left':
+                            $tooltip.css({
+                                top: offset.top + $target.outerHeight() / 2 - $tooltip.outerHeight() / 2 + top,
+                                left: offset.left - $tooltip.outerWidth() - posBonus + left
+                            });
+                            break;
+
+                        default: // bottom
+                            $tooltip.css({
+                                top: offset.top + $target.outerHeight() + posBonus + top,
+                                left: offset.left + left
+                            });
+                    }
+                }
+
+                function positionTooltipCenter($tooltip, position) {
+                    if (position === 'top') {
+                        $tooltip.css({
+                            top: $(window).scrollTop() + 20,
+                            left: ($(window).width() - $tooltip.outerWidth()) / 2
+                        });
+                        $tooltip.addClass('bottom');
+                    } else {
+                        $tooltip.css({
+                            top: $(window).scrollTop() + ($(window).height() - $tooltip.outerHeight()) / 2,
+                            left: ($(window).width() - $tooltip.outerWidth()) / 2
+                        });
+                    }
+                }
+
+                function updateTooltipPosition() {
+                    const $tooltip = $('.tutorial-tooltip');
+                    const $target = $('.tutorial-highlight');
+
+                    if ($target.length && $target.is(':visible') && $tooltip.length) {
+                        const step = steps[currentStep];
+                        if (step) {
+                            tooltipPositioning($tooltip, $target, step.position || 'bottom');
+                        }
+                    }
+                }
+                // ==================== WAITING FUNCTIONS ====================
+
+                /**
+                 * Wait for element to appear in DOM
+                 * @param {string} selector - CSS selector
+                 * @param {Function} callback - Callback function to execute when element found
+                 * @param {number} timeout - Timeout in milliseconds
+                 */
+                function waitForElement(selector, callback, timeout = 2000) {
+                    const start = Date.now();
+
+                    $('body').trigger('processStart');
+
+                    const interval = setInterval(() => {
+                        const $el = $(selector);
+
+                        if ($el.length) {
+                            clearInterval(interval);
+                            $('body').trigger('processStop');
+                            callback($el);
+                        } else if (Date.now() - start > timeout) {
+                            clearInterval(interval);
+                            $('body').trigger('processStop');
+                            console.warn('Timeout waiting for element:', selector);
+                        }
+                    }, 500);
+                }
+
+                /**
+                 * Waits for the page to stabilize by monitoring changes in scroll height.
+                 * @param callback
+                 * @param timeout
+                 */
+                function waitForPageStable(callback, timeout = 4000) {
+                    let lastHeight = 0;
+                    let stableCount = 0;
+                    const requiredStableCount = 10;
+                    const start = Date.now();
+
+                    $('body').trigger('processStart');
+
+                    const checkStability = setInterval(() => {
+                        const currentHeight = document.body.scrollHeight;
+
+                        if (currentHeight === lastHeight) {
+                            stableCount++;
+                        } else {
+                            stableCount = 0;
+                            lastHeight = currentHeight;
+                        }
+
+                        if (stableCount >= requiredStableCount) {
+                            clearInterval(checkStability);
+                            $('body').trigger('processStop');
+                            setTimeout(callback, 200);
+                        } else if (Date.now() - start > timeout) {
+                            clearInterval(checkStability);
+                            $('body').trigger('processStop');
+                            console.warn('Page stability timeout, proceeding anyway');
+                            callback();
+                        }
+                    }, 100);
+                }
+
+                function observeDomChanges($target) {
+                    const self = this;
+                    const targetNode = document.body;
+                    const config = { childList: true, subtree: true };
+
+                    let debounceTimer;
+                    const observer = new MutationObserver(() => {
+                        self.updateTooltipPosition();
+
+                        if ($target.length) {
+                            clearTimeout(debounceTimer);
+                            debounceTimer = setTimeout(() => {
+                                self.waitForPageStable(function() {
+                                    if ($target.length && !self.isInViewport($target)) {
+                                        self.scrollToElement($target);
+                                    }
+                                });
+                            }, 300);
+                        }
+                    });
+
+                    observer.observe(targetNode, config);
+                    this.domObserver = observer;
+                }
+
+                // ==================== TRIGGER HANDLING FUNCTIONS ====================
+
+                function handleTrigger(step) {
+                    if (step.trigger && step.trigger !== 'none') {
+                        const $trigger = $(step.trigger);
+                        if ($trigger.length) {
+                            $trigger.trigger('click');
+                        }
+                    }
+                }
+
+                // ========== EVENT BINDING FUNCTIONS ==========
+                function bindEvents() {
+                    // Multi-flow buttons
+                    $('.start-flow').on('click', function() {
+                        startFlow($(this).data('type'));
+                    });
+
+                    // Single flow button
+                    $('#start-tutorial').on('click', function() {
+                        startSingleFlow();
+                    });
+
+                    // Previous step trong end box
+                    $('#prev-last-step').on('click', function() {
+                        goToPreviousFromEnd();
+                    });
+
+                    // Skip tutorial buttons
+                    $('.skip-tutorial').on('click', function() {
+                        closeTutorial();
+                    });
+
+                    // Window events
+                    $(window).on('resize scroll', function() {
+                        updateTooltipPosition();
+                    });
+                }
+
+                function bindTooltipEvents() {
+                    // Next step button
+                    $('#next-step').off('click').on('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        goToNextStep();
+                    });
+
+                    // Previous step button
+                    $('#prev-step').off('click').on('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        goToPreviousStep();
+                    });
+
+                    // Skip button
+                    $('.skip-tutorial').off('click').on('click', function() {
+                        closeTutorial();
+                    });
+                }
+
+                // ========== INITIALIZATION ==========
+                function init() {
+                    if (isSkipped()) return;
+                    setupInitialStyles();
+                    resumeOrStartTutorial();
+                    bindEvents();
+                }
+
+                // Start the tutorial
+                init();
+            });
+        });
+    </script>
 
     <!-- STYLE -->
     <style>

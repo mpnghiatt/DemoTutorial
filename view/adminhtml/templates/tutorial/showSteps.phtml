@@ -199,15 +199,13 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                  * @param {jQuery} $target - Target element
                  */
                 function tooltipPositioning(offset, position, $tooltip, $target) {
-                    const currentOffset = $target.offset();
-                    if (!currentOffset) return;
-
                     const tooltipHeight = $tooltip.outerHeight(),
                           tooltipWidth  = $tooltip.outerWidth(),
                           targetHeight  = $target.outerHeight(),
                           targetWidth   = $target.outerWidth(),
                           top           = 0,
                           left          = 0;
+
                     switch (position) {
                         case 'top':
                             $tooltip.css({
@@ -538,8 +536,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     attachStepEventHandlers(step);
                 }
 
-                // ==================== EVENT HANDLER FUNCTIONS ====================
-
                 /**
                  * Handle next step button click
                  * @param {Object} step - Current step configuration
@@ -589,6 +585,17 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
 
                     // Skip tutorial handler
                     $('.skip-tutorial').off('click').on('click', closeTutorial);
+                }
+
+
+                /**
+                 * Go back to last step from end screen
+                 */
+                function goBackToLastStep() {
+                    currentStep = steps.length - 1;
+                    $('#tutorial-end-box').fadeOut(function () {
+                        showStep(currentStep);
+                    });
                 }
 
                 // ==================== MAIN TUTORIAL FUNCTIONS ====================
@@ -678,16 +685,6 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     }
                 }
 
-                /**
-                 * Go back to last step from end screen
-                 */
-                function goBackToLastStep() {
-                    currentStep = steps.length - 1;
-                    $('#tutorial-end-box').fadeOut(function () {
-                        showStep(currentStep);
-                    });
-                }
-
                 // ==================== EVENT LISTENERS SETUP ====================
 
                 /**
@@ -733,6 +730,8 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
             });
         });
     </script>
+
+    <!-- STYLE -->
     <style>
         .tutorial-overlay {
             position: fixed;
