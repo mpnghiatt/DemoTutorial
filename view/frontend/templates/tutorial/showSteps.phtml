@@ -33,13 +33,12 @@ $moduleName  = $info['module_name'];
 
 $pageUrl = $block->getRequest()->getRequestUri();
 $isLogin = $helperData->isCustomerLoggedIn();
-$stepsUnregister = $block->getSteps(0, 'frontend');
-$stepsRegister = $block->getSteps(1, 'frontend');
 $exData = $helperData->getContentJson();
 
+$stepsUnregister = $block->getSteps(0, 'frontend');
+$stepsRegister   = $block->getSteps(1, 'frontend');
 $hasUnregistered = !empty($stepsUnregister);
-$hasRegistered = !empty($stepsRegister);
-
+$hasRegistered   = !empty($stepsRegister);
 ?>
 
 <?php if ($hasUnregistered || $hasRegistered): ?>
@@ -49,36 +48,21 @@ $hasRegistered = !empty($stepsRegister);
         <!-- FIRST BOX -->
         <div id="tutorial-first-box" class="tutorial-box" style="display:none;">
             <span class="welcome-title">
-                <?= /* @noEscape */ __('Welcome to the Frontend Demo of  the') ?>
+                <?= /* @noEscape */ __('Welcome to the Frontend Demo of the') ?>
                 <br>
-                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ __('Magento 2 ') . $moduleName . __(' extension') ?></a>
+                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ __('Magento 2 ') . $moduleName . __(' Extension') ?></a>
                 <?= /* @noEscape */ __(' by Mageplaza') ?>
             </span>
             <p class="welcome-content mp-center lh-20">
-                <?= /* @noEscape */ __('Explore how your customers can browse products by brand, view brand pages,') ?>
+                <?= /* @noEscape */ __('Here, your customers can view their account information,') ?>
                 <br>
-                <?= /* @noEscape */ __('and enjoy a more streamlined shopping experience.') ?>
+                <?= /* @noEscape */ __('order history, and print PDF files.') ?>
             </p>
 
-            <?php if ($hasRegistered && $hasUnregistered): ?>
-                <!-- TWO FLOW SELECTION -->
-                <div class="mp-center select-flow">
-                    <button class="start-flow" data-type="unregistered"><?= __('Unregistered Customers') ?></button>
-                    <button class="start-flow" data-type="registered"><?= __('Registered Customers') ?></button>
-                </div>
-            <?php else: ?>
-                <!-- SINGLE FLOW : just skip + next -->
-                <div class="tutorial-toolbar single-flow-toolbar">
-                    <button class="skip-tutorial"><?= __('Skip') ?></button>
-                    <button id="start-tutorial"><?= __('Next') ?></button>
-                </div>
-            <?php endif; ?>
-
-            <?php if ($hasRegistered && $hasUnregistered): ?>
-                <div class="tutorial-toolbar">
-                    <button class="skip-tutorial">Skip</button>
-                </div>
-            <?php endif; ?>
+            <div class="tutorial-toolbar single-flow-toolbar">
+                <button class="skip-tutorial"><?= __('Skip') ?></button>
+                <button id="start-tutorial"><?= __('Next') ?></button>
+            </div>
         </div>
 
         <!-- END BOX -->
@@ -88,11 +72,16 @@ $hasRegistered = !empty($stepsRegister);
                 <br>
                 <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ __('Mageplaza ') . $moduleName . __(' Extension.') ?></a>
             </span>
-            <div class="welcome-content mp-center lh-10">
-                <span><?= /* @noEscape */ __('For a closer look at setup and tracking, explore the Backend Demo.') ?></span>
+            <div class="welcome-content mp-center">
+                <span><a href="<?= /* @noEscape */ $contactUrl ?>"> <?= /* @noEscape */ __('Contact us ') ?></a>
+                    <?= /* @noEscape */ __('if you have any questions about our PDF invoice extensions!') ?>
+                </span>
                 <br>
-                <span><?= /* @noEscape */ __('Do you have any questions? ') ?>
-                    <a href="<?= /* @noEscape */ $contactUrl ?>"> <?= /* @noEscape */ __('Contact us') ?></a>
+                <span><?= /* @noEscape */ __('Feel free to explore the ') ?>
+                    <a href="<?= /* @noEscape */ $backend ?>"> <?= /* @noEscape */ __('Backend Demo') ?></a>
+                    <?= /* @noEscape */ __(' to see how you can manage and') ?>
+                    <br>
+                    <?= /* @noEscape */ __('customize PDF templates in your Magento store!') ?>
                 </span>
             </div>
             <div class="tutorial-toolbar">
@@ -122,7 +111,6 @@ $hasRegistered = !empty($stepsRegister);
                 };
 
                 // ========== STATE VARIABLES ==========
-                const multiFlow = <?= json_encode($hasRegistered && $hasUnregistered) ?>;
                 const allSteps = {
                     registered: <?= json_encode(array_values(array_map(function ($s) {
                         return [
@@ -234,31 +222,19 @@ $hasRegistered = !empty($stepsRegister);
 
                 function resumeTutorial(savedStep) {
                     currentStep = savedStep;
-                    type = multiFlow ? getSavedFlowType() || 'unregistered' : 'unregistered';
+                    type = 'registered';
                     steps = allSteps[type] || [];
                     showOverlay();
                     showStep(currentStep);
                 }
 
-                function startFlow(flowType) {
-                    type = flowType;
+                function startFlow() {
+                    type = 'registered';
                     steps = allSteps[type] || [];
                     currentStep = 0;
                     saveStep(currentStep);
                     saveFlowType(type);
-
-                    if (type === 'registered') {
-                        handleDemoAutoLogin();
-                    } else {
-                        startTutorialFlow();
-                    }
-                }
-
-                function startSingleFlow() {
-                    type = 'unregistered';
-                    steps = allSteps[type] || [];
-                    currentStep = 0;
-                    saveStep(currentStep);
+                    handleDemoAutoLogin();
                     startTutorialFlow();
                 }
 
@@ -565,14 +541,9 @@ $hasRegistered = !empty($stepsRegister);
 
                 // ========== EVENT BINDING FUNCTIONS ==========
                 function bindEvents() {
-                    // Multi-flow buttons
-                    $('.start-flow').on('click', function() {
-                        startFlow($(this).data('type'));
-                    });
-
                     // Single flow button
                     $('#start-tutorial').on('click', function() {
-                        startSingleFlow();
+                        startFlow();
                     });
 
                     // Previous step trong end box
