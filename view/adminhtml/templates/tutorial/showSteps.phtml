@@ -45,15 +45,14 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
     <div id="popup-container" class="popup-container" style="display: none;font-family: 'Outfit';min-width: 50%">
         <div id="tutorial-first-box" class="tutorial-box" style="display: none;">
             <span class="welcome-title">
-                <?= /* @noEscape */ __('Welcome to the  Backend Demo of the ') ?>
+                <?= /* @noEscape */ __('Welcome to the  Backend Demo of') ?>
                 <br>
-                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ __('Magento 2 ') . $moduleName . __(' extension') ?></a>
-                <?= /* @noEscape */ __(' by Mageplaza') ?>
+                <?= /* @noEscape */ __('the ') ?>
+                <a href="<?= /* @noEscape */ $exData['live_url'] ?>"><?= /* @noEscape */ __('Magento 2 ') . $moduleName?></a>
+                <?= /* @noEscape */ __(' Extension by Mageplaza') ?>
             </span>
             <p class="welcome-content mp-center">
-                <?= /* @noEscape */ __('Let’s see how you can create brand pages, assign products, and customize brand display') ?>
-                <br>
-                <?= /* @noEscape */ __('to enhance your store’s navigation and shopping experience.') ?>
+                <?= /* @noEscape */ __('Let’s explore how you can create and send invoices to your customers immediately.') ?>
             </p>
             <div class="tutorial-toolbar">
                 <button class="skip-tutorial">Skip</button>
@@ -66,14 +65,17 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                 <?= /* @noEscape */ __('That\'s the end of the Backend Demo of') ?>
                 <br>
                 <a href="<?= /* @noEscape */ $exData['live_url'] ?>">
-                    <?= /* @noEscape */ __('Mageplaza ') . $moduleName . __(' extension')?>
-                    <br>
+                    <?= /* @noEscape */ __('Mageplaza ') . $moduleName?>
+                    <?=  /* @noEscape */ __(' Extension')?>
                 </a>
             </span>
             <div class="welcome-content">
-                <span class="mp-center"><?= __('Check out our ')?>
-                    <a href="<?= $guideUrl?>"><?= __('User Guide')?></a>
-                    <?= __('or contact us if you have any questions.')?>
+                <span class="mp-center">
+                    <a href="<?= $contactUrl ?>"><?= __('Contact us')?></a>
+                    <?= __('if you have any questions about our PDF invoice extensions!')?>
+                    <br>
+                    <?= __('Explore our detailed tutorials in the ')?>
+                    <a href="<?= $guideUrl ?>"><?= __('User Guide.')?></a>
                 </span>
             </div>
             <div class="tutorial-toolbar">
@@ -83,7 +85,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
         </div>
     </div>
     <script type="text/javascript">
-        require(['jquery'], function ($) {
+        require(['jquery', 'select20dom'], function ($) {
             $(window).on('load', function () {
                 // ==================== CONSTANTS & VARIABLES ====================
 
@@ -139,6 +141,12 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     return saved !== null ? parseInt(saved) : null;
                 }
 
+                function isInViewport($el) {
+                    const rect = $el[0].getBoundingClientRect();
+                    return rect.top >= 0 && rect.left >= 0 &&
+                        rect.bottom <= window.innerHeight && rect.right <= window.innerWidth;
+                }
+
                 // ==================== DOM MANIPULATION FUNCTIONS ====================
 
                 /**
@@ -189,6 +197,48 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
             `;
                 }
 
+                function addStyleToHead(css) {
+                    $(css).appendTo('head');
+                }
+
+                function removeStyleOnHead(id){
+                    const element = $(id);
+                    if (element.length) {
+                        element.remove();
+                    }
+                }
+
+                function moveTemplateNote() {
+                    var $note = $("#default_template-note"),
+
+                        $control = $note.closest(".admin__field-control");
+                    $note.addClass('default_template-note-edit');
+                    $note.insertAfter($control);
+                }
+
+                function resetTemplateNote() {
+                    var $note = $("#default_template-note"),
+                        $control = $note.siblings(".admin__field-control");
+
+                    if ($note.length && $control.length) {
+                        $control.append($note);
+                        $note.removeClass('default_template-note-edit');
+                    }
+                }
+
+                function changeSelect2Css() {
+                    var $select2 = $('#base_fieldset .field-default_template .admin__field-control');
+                    if ($select2.length) {
+                        $select2.addClass('select2-edit');
+                    }
+                }
+
+                function resetSelect2Css () {
+                    var $select2 = $('#base_fieldset .field-default_template .admin__field-control');
+                    if ($select2.length) {
+                        $select2.removeClass('select2-edit');
+                    }
+                }
                 // ==================== POSITIONING FUNCTIONS ====================
 
                 /**
@@ -202,31 +252,38 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     const tooltipHeight = $tooltip.outerHeight(),
                           tooltipWidth  = $tooltip.outerWidth(),
                           targetHeight  = $target.outerHeight(),
-                          targetWidth   = $target.outerWidth(),
-                          top           = 0,
-                          left          = 0;
+                          targetWidth   = $target.outerWidth();
+                    let top  = 0,
+                        left = 0;
 
                     switch (position) {
                         case 'top':
+                            if (currentStep === 9) {
+                                left = 800;
+                            }
                             $tooltip.css({
                                 top: offset.top - tooltipHeight - 15,
-                                left: offset.left,
+                                left: offset.left + left,
                                 position: 'absolute'
                             });
                             break;
 
                         case 'right':
                             $tooltip.css({
-                                top: offset.top + targetHeight / 2 - tooltipHeight / 2,
+                                top: offset.top + targetHeight / 2 - tooltipHeight / 2 + top,
                                 left: offset.left + targetWidth + 30,
                                 position: 'absolute'
                             });
                             break;
 
                         case 'left':
+                            if (currentStep === 12) {
+                                left = 210;
+                            }
+
                             $tooltip.css({
                                 top: offset.top + targetHeight / 2 - tooltipHeight / 2,
-                                left: offset.left - 10 - targetWidth / 2 - tooltipWidth / 2,
+                                left: offset.left - 10 - targetWidth / 2 - tooltipWidth / 2 + left,
                                 position: 'absolute'
                             });
                             break;
@@ -253,7 +310,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         position: 'absolute'
                     });
                     // Hide tooltip arrow when centered
-                    $('<style>.tutorial-tooltip::before { display: none !important; content: none !important; }</style>').appendTo('head');
+                    addStyleToHead('<style>.tutorial-tooltip::before { display: none !important; content: none !important; }</style>');
                 }
 
                 /**
@@ -322,7 +379,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                  * @param {Function} callback - Callback function to execute when element found
                  * @param {number} timeout - Timeout in milliseconds
                  */
-                function waitForElement(selector, callback, timeout = 2000) {
+                function waitForElement(selector, callback, timeout) {
                     const start = Date.now();
 
                     $('body').trigger('processStart');
@@ -347,7 +404,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                  * @param {Function} callback - Callback to execute when page is stable
                  * @param {number} timeout - Timeout in milliseconds
                  */
-                function waitForPageStable(callback, timeout = 2000) {
+                function waitForPageStable(callback, timeout) {
                     let lastHeight  = 0,
                         stableCount = 0;
                     const requiredStableCount = 10,
@@ -379,22 +436,21 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                 }
 
                 function observeDomChanges($target) {
-                    const self = this;
                     const targetNode = document.body;
                     const config = { childList: true, subtree: true };
 
                     let debounceTimer;
                     const observer = new MutationObserver(() => {
-                        self.updateTooltipPosition();
+                        updateTooltipPosition();
 
                         if ($target.length) {
                             clearTimeout(debounceTimer);
                             debounceTimer = setTimeout(() => {
-                                self.waitForPageStable(function() {
-                                    if ($target.length && !self.isInViewport($target)) {
-                                        self.scrollToElement($target);
+                                waitForPageStable(function() {
+                                    if ($target.length && !isInViewport($target)) {
+                                        scrollToElement($target,300);
                                     }
-                                });
+                                }, 2000);
                             }, 300);
                         }
                     });
@@ -413,6 +469,13 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     return window.location.pathname.includes(path);
                 }
 
+                function closeModal() {
+                    const button = $('button.action-close');
+                    if (button.length && button.is(':visible')) {
+                        button.trigger('click');
+                    }
+                }
+
                 // ==================== TRIGGER HANDLING FUNCTIONS ====================
                 /**
                  * Handle step trigger actions (clicks, expansions, etc.)
@@ -420,39 +483,73 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                  */
                 function handleTrigger(step) {
                     const $element = $(step.element);
-                    const isExpanded = $element.hasClass('section-config') ||
-                        $element.hasClass('active') ||
-                        $element.hasClass('_show');
 
                     // Handle fieldset expansion triggers
                     if (step.trigger && step.trigger !== 'none' &&
-                        ($element.hasClass('section-config') || $element.is('tr')) &&
-                        !($element.find('.section-config.active').length || $element.hasClass('active'))) {
-
+                        $element.hasClass('section-config') &&
+                        !$element.hasClass('active')
+                    ) {
+                        const isExpanded = $element.hasClass('active') || $element.hasClass('_show');
                         const $trigger = $(step.trigger);
+
                         if (!isExpanded) {
-                            if ($trigger.length) {
-                                const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
+                            const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
+                            if ($trigger.length && $trigger.get(0)) {
                                 Fieldset.toggleCollapse($trigger.get(0), baseUrl);
                             } else {
                                 waitForElement(step.trigger, function ($resolvedTrigger) {
-                                    const baseUrl = window.location.origin + '/admin/admin/system_config/state/';
                                     Fieldset.toggleCollapse($resolvedTrigger.get(0), baseUrl);
-                                });
+                                }, 2000);
                             }
                         }
                     }
                     // Handle general click triggers
                     else if (step.trigger && step.trigger !== 'none') {
-                        let target = $(step.trigger);
-                        if (target.length && !$element.hasClass('_show')) {
-                            target.trigger('click');
-                        } else {
-                            $('#entity').val(step.trigger).trigger('change');
+                        let $target = $(step.trigger);
+                        const isExpanded = $element.hasClass('active') || $element.hasClass('_show') || $element.hasClass('open')
+                        if (step.trigger === 'select#default_template') {
+                            $target.select2({
+                                minimumResultsForSearch: Infinity,
+                                templateResult: function (data) {
+                                    if (!data.id) {
+                                        return data.text;
+                                    }
+
+                                    var $option = $(data.element);
+                                    if ($option.hasClass('parent-category')) {
+                                        return $('<span style="font-weight: bold;">' + data.text + '</span>');
+                                    }
+
+                                    return data.text;
+                                }
+                            });
+                            $target.select2('open');
+                        }
+                        else if ($target.length && !isExpanded) {
+                            $target.trigger('click');
                         }
                     }
                 }
 
+                /**
+                 * Close all PDF invoice sections in system configuration
+                 */
+                function closePdfInvoiceSections() {
+                    const ids = [
+                        'pdfinvoice_order-head',
+                        'pdfinvoice_invoice-head',
+                        'pdfinvoice_shipment-head',
+                        'pdfinvoice_creditmemo-head'
+                    ];
+
+                    ids.forEach(function (baseId) {
+                        const $element = $('#' + baseId);
+
+                        if ($element.length && $element.hasClass('open')) {
+                            $element.trigger('click');
+                        }
+                    });
+                }
                 // ==================== STEP RENDERING FUNCTIONS ====================
 
                 /**
@@ -464,9 +561,24 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         const $wrapper = $('<div class="tutorial-highlight-wrapper"></div>');
                         $target.wrap($wrapper);
                         $target.parent().addClass('tutorial-highlight');
-                        $('<style>.tutorial-tooltip:before { left: 4% !important; }</style>').appendTo('head');
+                        addStyleToHead('<style>.tutorial-tooltip:before { left: 4% !important; }</style>');
                     } else {
                         $target.addClass('tutorial-highlight');
+                        if (currentStep === 9) {
+                            addStyleToHead('<style id="scale-style">' +
+                                '.data-grid-actions-cell { ' +
+                                    ' transform: scaleX(1.2) scaleY(1.2); ' +
+                                    ' transform-origin: right; ' +
+                                    ' border-radius: 6px; ' +
+                                    ' overflow: hidden; ' +
+                                    ' z-index:100; ' +
+                                    ' filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.25)); ' +
+                                    '}' +
+                                    '</style>');
+                        }
+                        if (currentStep === 12) {
+                            $target.addClass('position-fixed zIndex-999');
+                        }
                     }
                 }
 
@@ -490,6 +602,9 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     const offset = $target.offset();
                     const position = step.position || 'bottom';
                     $tooltip.addClass(position);
+                    if (currentStep === 9) {
+                        $tooltip.addClass('tutorial-tooltip-before-right');
+                    }
                     tooltipPositioning(offset, position, $tooltip, $target);
                 }
 
@@ -510,7 +625,11 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     highlightTarget($target);
 
                     // Scroll to target element
-                    scrollToElement($target, 300);
+                    if (currentStep === 17) {
+                        scrollToElement($target, 600);
+                    } else {
+                        scrollToElement($target, 300);
+                    }
 
                     // Create and position tooltip
                     createAndPositionTooltip(step, index, $target);
@@ -541,7 +660,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                  * @param {Object} step - Current step configuration
                  */
                 function handleNextStep(step) {
-                    if (step.trigger) {
+                    if (step.trigger && step.trigger !== 'select#default_template') {
                         handleTrigger(step);
                     }
 
@@ -549,6 +668,21 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         currentStep++;
                         saveCurrentStep(currentStep);
                         showStep(currentStep);
+                        if ([4].includes(currentStep)) {
+                            closePdfInvoiceSections();
+                        }
+                        if (currentStep === 10) {
+                            removeStyleOnHead('scale-style');
+                        }
+
+                        if (currentStep !== 12) {
+                            closeModal();
+                        }
+
+                        if (currentStep === 17) {
+                            resetTemplateNote();
+                            resetSelect2Css();
+                        }
                     } else {
                         // Tutorial completed - show end screen
                         cleanupTutorialUI();
@@ -561,7 +695,7 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                  * @param {Object} step - Current step configuration
                  */
                 function handlePreviousStep(step) {
-                    if (step.trigger) {
+                    if (step.trigger && step.trigger !== 'select#default_template') {
                         handleTrigger(step);
                     }
 
@@ -569,6 +703,26 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                         currentStep--;
                         saveCurrentStep(currentStep);
                         showStep(currentStep);
+                        if ([4].includes(currentStep)) {
+                            closePdfInvoiceSections();
+                        }
+                        if (currentStep === 10) {
+                            removeStyleOnHead('scale-style');
+                        }
+
+                        if (currentStep !== 12) {
+                            closeModal();
+                        }
+
+                        if (currentStep === 15) {
+                            resetTemplateNote();
+                            resetSelect2Css();
+                        }
+
+                        if (currentStep === 16) {
+                            moveTemplateNote();
+                            changeSelect2Css();
+                        }
                     }
                 }
 
@@ -607,6 +761,12 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     markTutorialAsSkipped();
                     cleanupTutorialUI();
                     skipTutorial();
+                    removeStyleOnHead('scale-style');
+                    closeModal();
+                    if (currentStep === 16) {
+                        resetTemplateNote();
+                        resetSelect2Css();
+                    }
                 }
 
                 /**
@@ -634,21 +794,33 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
                     $('.tutorial-highlight').removeClass('tutorial-highlight');
                     $('.tutorial-tooltip, .tutorial-tooltip-left').remove();
 
+                    if (currentStep === 16) {
+                        moveTemplateNote();
+                        changeSelect2Css();
+                    }
+
                     // Find target element
                     const $target = $(step.element);
 
-                    if ($target.length) {
+                    if ($target.length && currentStep !== 10) {
                         // Target element found - render normally
                         renderStep($target, step, index);
-                    } else if (!$target.length) {
+                    } else if (!$target.length || currentStep === 10) {
+                        let timeout = 2000;
                         // Target element not found - wait for it
+                        if (currentStep === 12) {
+                            timeout = 10000;
+                        }
+                        if (currentStep === 10) {
+                            timeout = 1000;
+                        }
                         waitForElement(step.element, function ($foundTarget) {
                             waitForPageStable(function() {
                                 if ($foundTarget.length) {
                                     renderStep($foundTarget, step, index);
                                 }
-                            });
-                        });
+                            }, timeout);
+                        }, timeout);
                     } else {
                         renderStepWithoutTarget(step, index);
                     }
@@ -859,8 +1031,11 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
             left: 99%;
         }
         .tutorial-tooltip.right:before {
-            transform: rotate(90deg);
-            top: -25px;
+            top: 65px;
+            left: -24px;
+        }
+        .tutorial-tooltip-before-right:before {
+            left: 92% !important;
         }
         .tutorial-tooltip-left {
             font-family: 'Outfit';
@@ -893,6 +1068,22 @@ $isLoggedIn  = $helperData->isAdminLoggedIn();
         }
         .mg-top-24 {
             margin-top: 24rem !important;
+        }
+        .modal-slide {
+            left: 100rem !important;
+        }
+        .position-fixed {
+            position: fixed !important;
+        }
+        .zIndex-999 {
+            z-index: 999 !important;
+        }
+        .default_template-note-edit {
+            z-index: 1 !important;
+            right: 300px !important;
+        }
+        .select2-edit {
+            width: 290px !important;
         }
     </style>
 <?php endif; ?>
